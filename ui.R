@@ -31,7 +31,7 @@ shinyUI(
             # and number of observations to generate. Note the use of the br()
             # element to introduce extra vertical spacing
             sidebarPanel(
-                h3("Wellesley Data Explorer (Dev 2.00b)", style="color: DarkBlue; margin-top: 0;"),
+                h3("Wellesley Data Explorer (Dev 2.00c)", style="color: DarkBlue; margin-top: 0;"),
                 
                 ## UPLOAD DATA
                 conditionalPanel(
@@ -782,7 +782,7 @@ shinyUI(
                                      
                                      br(),
                                      
-                                     h4("V 2.00a:"),
+                                     h4("V 2.00c:"),
                                      h5("- Occasional temporary error warnings in plot window are set to white (invisible)."),
                                      h5("- Perhaps reconsider the fitted models interface"),
                                      h5("- Need to allow dataset switching memory for fitted model input objects"),
