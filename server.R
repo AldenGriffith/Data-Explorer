@@ -600,8 +600,10 @@ shinyServer(function(input, output, session) {
             
             if (input$Subset_dy != "(none)"){
                 
-                #need to refactor sometimes. might have to do with excel vs csv  - crashes on switch?!
-                V$Data[[V$Current]][,input$Subset_dy] <- factor(V$Data[[V$Current]][,input$Subset_dy])
+                # #need to refactor sometimes. might have to do with excel vs csv  - crashes on switch?!
+                # V$Data[[V$Current]][,input$Subset_dy] <- factor(V$Data[[V$Current]][,input$Subset_dy])
+                message(is.factor(V$Data[[V$Current]][,input$Subset_dy]))
+                
                 
                 V$Choices[[V$Current]]$SubSel_dy <- levels(V$Data[[V$Current]][,input$Subset_dy])
                 
@@ -1529,18 +1531,29 @@ shinyServer(function(input, output, session) {
     #Linear model output
     output$Linear.Table <- renderTable({
         
+        
         #only if x and y are selected
         if (input$X_dy != "(none)" & input$Y_dy != "(none)" & any(grepl("Linear", input$Models)) & any(grepl("results", input$Fit.Linear))){
             
-            X <- V$Data[[V$Current]][,input$X_dy]
-            Y <- V$Data[[V$Current]][,input$Y_dy]
+            Data <- V$Data[[V$Current]]
+            
+            #Subset data
+            if (input$Subset_dy != "(none)" && !is.null(input$SubSel_dy)){
+                
+                Data <- subset(Data, is.element(Data[,input$Subset_dy], input$SubSel_dy))
+                
+                Data[,input$Subset_dy] <- factor (Data[,input$Subset_dy])
+            }
+            
+            X <- Data[,input$X_dy]
+            Y <- Data[,input$Y_dy]
             
             D <- data.frame(X = X, Y = Y)
             
             #add in grouping variable
             if (any(grepl("group", input$Fit.Linear))) {
                 Group <- TRUE
-                D$Group <- V$Data[[V$Current]][,input$Group_dy]
+                D$Group <- Data[,input$Group_dy]
                 D <- D[complete.cases(D$X, D$Y, D$Group),]
                 D$Group <- factor(D$Group)
             } else {
@@ -1610,15 +1623,25 @@ shinyServer(function(input, output, session) {
         #only if x and y are selected
         if (input$X_dy != "(none)" & input$Y_dy != "(none)" & any(grepl("Quadratic", input$Models)) & any(grepl("results", input$Fit.Quadratic))){
             
-            X <- V$Data[[V$Current]][,input$X_dy]
-            Y <- V$Data[[V$Current]][,input$Y_dy]
+            Data <- V$Data[[V$Current]]
+            
+            #Subset data
+            if (input$Subset_dy != "(none)" && !is.null(input$SubSel_dy)){
+                
+                Data <- subset(Data, is.element(Data[,input$Subset_dy], input$SubSel_dy))
+                
+                Data[,input$Subset_dy] <- factor (Data[,input$Subset_dy])
+            }
+            
+            X <- Data[,input$X_dy]
+            Y <- Data[,input$Y_dy]
             
             D <- data.frame(X = X, Y = Y)
             
             #add in grouping variable
             if (any(grepl("group", input$Fit.Quadratic))) {
                 Group <- TRUE
-                D$Group <- V$Data[[V$Current]][,input$Group_dy]
+                D$Group <- Data[,input$Group_dy]
                 D <- D[complete.cases(D$X, D$Y, D$Group),]
                 D$Group <- factor(D$Group)
             } else {
@@ -1686,15 +1709,25 @@ shinyServer(function(input, output, session) {
         #only if x and y are selected
         if (input$X_dy != "(none)" & input$Y_dy != "(none)" & any(grepl("Power", input$Models)) & any(grepl("results", input$Fit.Power))){
             
-            X <- V$Data[[V$Current]][,input$X_dy]
-            Y <- V$Data[[V$Current]][,input$Y_dy]
+            Data <- V$Data[[V$Current]]
+            
+            #Subset data
+            if (input$Subset_dy != "(none)" && !is.null(input$SubSel_dy)){
+                
+                Data <- subset(Data, is.element(Data[,input$Subset_dy], input$SubSel_dy))
+                
+                Data[,input$Subset_dy] <- factor (Data[,input$Subset_dy])
+            }
+            
+            X <- Data[,input$X_dy]
+            Y <- Data[,input$Y_dy]
             
             D <- data.frame(X = X, Y = Y)
             
             #add in grouping variable
             if (any(grepl("group", input$Fit.Power))) {
                 Group <- TRUE
-                D$Group <- V$Data[[V$Current]][,input$Group_dy]
+                D$Group <- Data[,input$Group_dy]
                 D <- D[complete.cases(D$X, D$Y, D$Group),]
                 D$Group <- factor(D$Group)
             } else {
@@ -1763,24 +1796,34 @@ shinyServer(function(input, output, session) {
         #only if x and y are selected
         if (input$X_dy != "(none)" & input$Y_dy != "(none)" & any(grepl("Custom", input$Models)) & any(grepl("results", input$Fit.Custom)) & V$form[[V$Current]] != "not fitted"){
             
-            X <- V$Data[[V$Current]][,input$X_dy]
-            Y <- V$Data[[V$Current]][,input$Y_dy]
+            Data <- V$Data[[V$Current]]
             
-            D <- data.frame(X = X, Y = Y)
+            #Subset data
+            if (input$Subset_dy != "(none)" && !is.null(input$SubSel_dy)){
+                
+                Data <- subset(Data, is.element(Data[,input$Subset_dy], input$SubSel_dy))
+                
+                Data[,input$Subset_dy] <- factor (Data[,input$Subset_dy])
+            }
+            
+            x <- Data[,input$X_dy]
+            y <- Data[,input$Y_dy]
+            
+            D <- data.frame(x = x, y = y)
             
             #add in grouping variable
             if (any(grepl("group", input$Fit.Custom))) {
                 Group <- TRUE
-                D$Group <- V$Data[[V$Current]][,input$Group_dy]
-                D <- D[complete.cases(D$X, D$Y, D$Group),]
+                D$Group <- Data[,input$Group_dy]
+                D <- D[complete.cases(D$x, D$y, D$Group),]
                 D$Group <- factor(D$Group)
             } else {
                 Group <- FALSE
-                D <- D[complete.cases(D$X, D$Y),]
+                D <- D[complete.cases(D$x, D$y),]
             }
             
-            form <- gsub("x", "X", tolower(V$form[[V$Current]])) #make X's uppercase
-            form <- as.formula(paste("Y ~",form)) # add "Y ~" to make formula
+            form <- gsub("x", "x", tolower(V$form[[V$Current]])) #make X's lowercase (otherwise exp issues)
+            form <- as.formula(paste("y ~",form)) # add "Y ~" to make formula
             
             params <- eval(parse(text = paste("list(", V$params[[V$Current]], ")"))) #make starting values list
             

@@ -10,14 +10,22 @@ V$Choices[[i]] <- choices
 #replace spaces with dots, etc...
 names(New.Data) <- make.names(names(New.Data), unique=TRUE)
 
+#which variables are numeric?
+vars.num <- sapply(New.Data, is.numeric)
+vars.cat <- sapply(New.Data, is.character) | sapply(New.Data, is.factor)
+# message(which(vars.cat))
+
+#factor all cat vars (just in case - not always done for excel data?)
+for (j in which(vars.cat)){
+    New.Data[,j] <- factor(New.Data[,j])
+}
+# print(sapply(New.Data, is.factor))
+
 #Adds new dataset to DATA object
 V$Data[[i]] <- New.Data
 
 #Stores name of dataset
 V$Name[i] <- input$Data.Name
-
-#which variables are numeric?
-vars.num <- sapply(New.Data, is.numeric)
 
 #Stores vectors of variable names
 # V$Y[[i]] <- c("(none)", names(New.Data[vars.num]))
@@ -26,7 +34,7 @@ vars.num <- sapply(New.Data, is.numeric)
 
 V$Choices[[i]]$Y_dy <- c("(none)", names(New.Data[vars.num]))
 V$Choices[[i]]$X_dy <- c("(none)", names(New.Data))
-V$Choices[[i]]$Group_dy <- c("(none)", names(New.Data[!vars.num]))
+V$Choices[[i]]$Group_dy <- c("(none)", names(New.Data[vars.cat]))
 V$Choices[[i]]$Subset_dy <- V$Choices[[i]]$Group
 
 #Setup list for saved figures (allows for separate galleries for datasets)
