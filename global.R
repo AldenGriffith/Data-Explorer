@@ -6,6 +6,7 @@ library(ggplot2)
 library(ggthemes)
 library(shinyjs)
 library(colourpicker)
+library(minpack.lm)
 
 enableBookmarking(store = "url")
 

@@ -37,7 +37,10 @@ shinyServer(function(input, output, session) {
         Group.Cat.Color = list(),
         Group.Fit.Linear = list(),
         Group.Fit.Quadratic = list(),
-        Group.Fit.Power = list()
+        Group.Fit.Power = list(),
+        Group.Fit.Custom = list(),
+        form = list(), #custom formula
+        params = list() #custom parameters
         # last.switched = as.numeric(Sys.time()),  #used to store Sys.time() when last switched - pauses group observer
         # switched = FALSE
         
@@ -449,6 +452,14 @@ shinyServer(function(input, output, session) {
                         
                     }
                     
+                    if (!V$Group.Fit.Custom[[V$Current]]){ 
+                        current.fit.custom <- input$Fit.Custom
+                        updateCheckboxGroupInput(session, "Fit.Custom", choices = c("Fit by group", "Show results"),
+                                                 selected = current.fit.custom)
+                        V$Group.Fit.Custom[[V$Current]] <- TRUE
+                        
+                    }
+                    
                     } else {
                         
                         switching <<- FALSE
@@ -523,6 +534,11 @@ shinyServer(function(input, output, session) {
                                              selected = current.fit.pow)
                     V$Group.Fit.Power[[V$Current]] <- FALSE
                     
+                    current.fit.custom <- grep("group", input$Fit.Custom, value = TRUE, invert = TRUE)
+                    updateCheckboxGroupInput(session, "Fit.Custom", choices = c("Show results"),
+                                             selected = current.fit.custom)
+                    V$Group.Fit.Custom[[V$Current]] <- FALSE
+                    
                     
                     } else {
                         
@@ -537,6 +553,14 @@ shinyServer(function(input, output, session) {
     })
     
     # debounce(group.obs, 1000)
+    
+    
+    observeEvent(input$Do.Custom,{
+        
+        V$form[[V$Current]] <- input$Custom.Formula
+        V$params[[V$Current]] <- input$Custom.Start
+        
+    })
     
     
     # # # Observe if bar plot
@@ -922,14 +946,14 @@ shinyServer(function(input, output, session) {
                     
                     if (any(grepl("group", input$Fit.Power)) && input$Group_dy != "(none)"){
                         
-                        gg_fit_power <- geom_smooth(aes_string(group = Group), method = 'nls', formula = y~a*x^b, method.args = list(start = list(a = 1, b=1), control = list(maxiter = 50000)),
+                        gg_fit_power <- geom_smooth(aes_string(group = Group), method = 'nlsLM', formula = y~a*x^b, method.args = list(start = list(a = 1, b=1)),
                                                     se=FALSE, color = input$Color.Power,
                                                     linetype = gsub(" ","",tolower(input$Type.Power)),
                                                     size = input$Size.Power)
                         
                     } else {
                         
-                        gg_fit_power <- geom_smooth(method = 'nls', formula = y~a*x^b, method.args = list(start = list(a = 1, b=1), control = list(maxiter = 50000)),
+                        gg_fit_power <- geom_smooth(method = 'nlsLM', formula = y~a*x^b, method.args = list(start = list(a = 1, b=1)),
                                                     se=FALSE, color = input$Color.Power,
                                                     linetype = gsub(" ","",tolower(input$Type.Power)),
                                                     size = input$Size.Power)
@@ -940,6 +964,38 @@ shinyServer(function(input, output, session) {
                 }
                 
                 
+                
+                
+                
+                #Custom model
+                if (any(grepl("Custom", input$Models)) && V$form[[V$Current]] != "not fitted") {
+                    
+                    # form <- gsub("x", "x", tolower(input$Custom.Formula)) #make x's lowercase
+                    form <- gsub("x", "x", tolower(V$form[[V$Current]])) #make x's lowercase
+                    
+                    form <- as.formula(paste("y ~", form)) # add "y ~" to make formula
+                    
+                    params <- eval(parse(text = paste("list(", V$params[[V$Current]], ")"))) #make starting values list
+                    
+                    
+                    if (any(grepl("group", input$Fit.Custom)) && input$Group_dy != "(none)"){
+
+                        gg_fit_custom <- geom_smooth(aes_string(group = Group), method = 'nlsLM', formula = form, method.args = list(start = params),
+                                                    se=FALSE, color = input$Color.Custom,
+                                                    linetype = gsub(" ","",tolower(input$Type.Custom)),
+                                                    size = input$Size.Custom)
+
+                    } else {
+
+                        gg_fit_custom <- geom_smooth(method = 'nlsLM', formula = form, method.args = list(start = params),
+                                                    se=FALSE, color = input$Color.Custom,
+                                                    linetype = gsub(" ","",tolower(input$Type.Custom)),
+                                                    size = input$Size.Custom)
+                    }
+                    
+                } else {
+                    gg_fit_custom <- NULL
+                }
                 
                 
                 # if (input$Fit.Power) {
@@ -962,6 +1018,7 @@ shinyServer(function(input, output, session) {
                     gg_fit_power +
                     gg_fit_linear +
                     gg_fit_quadratic +
+                    gg_fit_custom +
                     
                     # {if (is.element("Linear", input$Fit.Models)) geom_smooth(method = 'lm', formula = y ~ x, se = FALSE)} +
                     # {if (is.element("Quadratic", input$Fit.Models)) geom_smooth(method = 'lm', formula = y ~ x + I(x^2), se = FALSE)} +
@@ -1421,6 +1478,11 @@ shinyServer(function(input, output, session) {
             shinyjs::hide("div.Power")
         }    
         
+        if (any(grepl("Custom", input$Models))){
+            shinyjs::show("div.Custom")            
+        } else {
+            shinyjs::hide("div.Custom")
+        }
         
         
     })
@@ -1452,6 +1514,14 @@ shinyServer(function(input, output, session) {
         } else {
             shinyjs::hide("div.Power.Results")    
             
+        }
+        
+        if (any(grepl("results", input$Fit.Custom)) && any(grepl("Custom", input$Models))){
+
+            shinyjs::show("div.Custom.Results")
+        } else {
+            shinyjs::hide("div.Custom.Results")
+
         }
         
     })
@@ -1637,12 +1707,12 @@ shinyServer(function(input, output, session) {
             
             if (!Group){
                 
-                fit[[1]] <- nls(Y ~ a*X^b, data = D, start = list(a = 1, b=1), control = list(maxiter = 50000))
+                fit[[1]] <- nlsLM(Y ~ a*X^b, data = D, start = list(a = 1, b=1))
                 
                 # tab <- data.frame(NO.NAME = "Parameter values", a = signif(fit[[1]]$coefficients[1],3), b = signif(fit[[1]]$coefficients[2],3))
                 tab <- data.frame(NO.NAME = "Parameter values",
-                                  a = sprintf("%5.4g", summary(fit[[1]])$parameters[,1][1]),
-                                  b = sprintf("%5.4g", summary(fit[[1]])$parameters[,1][2]))
+                                  a = sprintf("%5.4g", coefficients(fit[[1]])[1]),
+                                  b = sprintf("%5.4g", coefficients(fit[[1]])[2]))
                 
                 
                 names(tab)[1] <- ""
@@ -1662,12 +1732,12 @@ shinyServer(function(input, output, session) {
                     
                     d <- subset(D, Group == levels(D$Group)[i])
                     
-                    fit[[i]] <- nls(Y ~ a*X^b, data = d, start = list(a = 1, b=1), control = list(maxiter = 50000))
+                    fit[[i]] <- nlsLM(Y ~ a*X^b, data = d, start = list(a = 1, b=1))
                     
                     tab$Group[i] <- levels(D$Group)[i]
                     
-                    tab$a[i] <- sprintf("%5.4g", summary(fit[[i]])$parameters[,1][1])
-                    tab$b[i] <- sprintf("%5.4g", summary(fit[[i]])$parameters[,1][2])
+                    tab$a[i] <- sprintf("%5.4g", coefficients(fit[[i]])[1])
+                    tab$b[i] <- sprintf("%5.4g", coefficients(fit[[i]])[2])
                     
                     # tab$a[i] <- signif(fit[[i]]$coefficients[1],5)
                     # tab$b[i] <- signif(fit[[i]]$coefficients[2],5)
@@ -1685,6 +1755,105 @@ shinyServer(function(input, output, session) {
         
         
     })
+    
+    
+    #Custom model output
+    output$Custom.Table <- renderTable({
+        
+        #only if x and y are selected
+        if (input$X_dy != "(none)" & input$Y_dy != "(none)" & any(grepl("Custom", input$Models)) & any(grepl("results", input$Fit.Custom)) & V$form[[V$Current]] != "not fitted"){
+            
+            X <- V$Data[[V$Current]][,input$X_dy]
+            Y <- V$Data[[V$Current]][,input$Y_dy]
+            
+            D <- data.frame(X = X, Y = Y)
+            
+            #add in grouping variable
+            if (any(grepl("group", input$Fit.Custom))) {
+                Group <- TRUE
+                D$Group <- V$Data[[V$Current]][,input$Group_dy]
+                D <- D[complete.cases(D$X, D$Y, D$Group),]
+                D$Group <- factor(D$Group)
+            } else {
+                Group <- FALSE
+                D <- D[complete.cases(D$X, D$Y),]
+            }
+            
+            form <- gsub("x", "X", tolower(V$form[[V$Current]])) #make X's uppercase
+            form <- as.formula(paste("Y ~",form)) # add "Y ~" to make formula
+            
+            params <- eval(parse(text = paste("list(", V$params[[V$Current]], ")"))) #make starting values list
+            
+            n.params <- length(params)
+            message(n.params)
+            
+            fit <- list()
+            
+            if (!Group){
+                
+                fit[[1]] <- nlsLM(form, data = D, start = params)
+                
+                # fit[[1]] <- nls(Y ~ a*X^b, data = D, start = list(a = 1, b=1), control = list(maxiter = 50000))
+                
+                # tab <- data.frame(NO.NAME = "Parameter values", a = signif(fit[[1]]$coefficients[1],3), b = signif(fit[[1]]$coefficients[2],3))
+                
+                tab <- data.frame(NO.NAME = "Parameter values")
+                names(tab)[1] <- ""
+                
+                message(names(params))
+                
+                for (j in 1:n.params){ #stucture in place for higher order polynomials
+                    
+                    # tab[1, letters[j]] <- signif(fit[[1]]$coefficients[j],5)
+                    tab[1, names(params)[j]] <- sprintf("%5.4g", coefficients(fit[[1]])[j])
+                    
+                }
+               
+                
+            } else {
+                
+                n <- nlevels(D$Group)
+                
+                # tab <- data.frame(Group = character(n), a = numeric(n), b = numeric(n),
+                #                   stringsAsFactors = FALSE)
+                
+                # tab <- data.frame(Group = character(n), a = character(n), b = character(n),
+                #                   stringsAsFactors = FALSE)
+                
+                tab <- data.frame(Group = character(n), stringsAsFactors = FALSE)
+                
+                for (i in 1:n){
+                    
+                    d <- subset(D, Group == levels(D$Group)[i])
+                    
+                    fit[[i]] <- nlsLM(form, data = d, start = params)
+                    
+                    tab$Group[i] <- levels(D$Group)[i]
+                    
+                    for (j in 1:n.params){ #stucture in place for higher order polynomials
+                        
+                        # tab[i, letters[j]] <- signif(fit[[i]]$coefficients[j],5)
+                        tab[i, names(params)[j]] <- sprintf("%5.4g", coefficients(fit[[i]])[j])
+                        
+                    }
+                    
+                    # tab$a[i] <- signif(fit[[i]]$coefficients[1],5)
+                    # tab$b[i] <- signif(fit[[i]]$coefficients[2],5)
+                    
+                }
+                
+            }
+            
+            return(tab)
+            
+        }  else {
+            
+            return()
+        }
+        
+        
+    })
+    
     
     
     # #Linear model results
@@ -1901,7 +2070,7 @@ shinyServer(function(input, output, session) {
         #length(V$Data)
         # str(as.numeric(input$which.file))
         # print(paste(V$New.Upload, V$Current, length(V$Data), sep=" || "))
-        ""
+        V$form
         
         # print(paste(input$Trans.Log))
         # print(str(input,1))

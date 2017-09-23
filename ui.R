@@ -31,7 +31,7 @@ shinyUI(
             # and number of observations to generate. Note the use of the br()
             # element to introduce extra vertical spacing
             sidebarPanel(
-                h3("Wellesley Data Explorer (Dev 2.00c)", style="color: DarkBlue; margin-top: 0;"),
+                h3("Wellesley Data Explorer (Dev 2.00d)", style="color: DarkBlue; margin-top: 0;"),
                 
                 ## UPLOAD DATA
                 conditionalPanel(
@@ -579,6 +579,54 @@ shinyUI(
                                                              )),
                                                              
                                                              
+                                                             #Custom    
+                                                             shinyjs::hidden(div(id = "div.Custom",
+                                                                                 
+                                                                                 hr(style = "margin: 0px 0 10px 0; border: .5px solid #00008B"),
+                                                                                 h5("Custom model", style="margin: 0px; font-weight: bold; color: DarkBlue"),
+                                                                                 
+                                                                                 fluidRow(
+                                                                                     column(width = 5,
+                                                                                            textInput("Custom.Formula", "Y = ", value =  "a + b*x")
+                                                                                            
+                                                                                     ),
+                                                                                     column(width = 5,
+                                                                                            textInput("Custom.Start", "Starting values", value =  "a = 0, b = 0")
+                                                                                     ),
+                                                                                     
+                                                                                     column(width = 2,
+                                                                                            br(),
+                                                                                            actionButton("Do.Custom", "Fit")
+                                                                                     )
+                                                                                 ),
+                                                                                 
+                                                                                 
+                                                                                 fluidRow(
+                                                                                     column(width = 6,
+                                                                                            checkboxGroupInput("Fit.Custom", NULL,
+                                                                                                               choices = c("Show results"),
+                                                                                                               selected = NULL)
+                                                                                            
+                                                                                     ),
+                                                                                     column(width = 6,
+                                                                                            colourInput("Color.Custom", "Color", value = "black",
+                                                                                                        palette = "limited", showColour = "background")
+                                                                                     )
+                                                                                     
+                                                                                 ),
+                                                                                 
+                                                                                 fluidRow(
+                                                                                     column(width = 6,
+                                                                                            numericInput("Size.Custom", "Thickness", value = 1, min = 0.5, max = 5, step = 0.5)
+                                                                                     ),
+                                                                                     
+                                                                                     column(width = 6,
+                                                                                            selectInput("Type.Custom", "Line type", choices = lty, selected = lty[1])
+                                                                                     )
+                                                                                 )
+                                                                                 
+                                                             )),
+                                                             
                                                              #Hidden inputs
                                                              shinyjs::hidden(div(
                                                                  checkboxGroupInput("Fit.Models", "Fit models:",
@@ -750,6 +798,16 @@ shinyUI(
                                                          h5(withMathJax("\\(Power \\space model: \\space\\space Y = aX^b\\)"), style = "color: DarkBlue"),
                                                          
                                                          tableOutput("Power.Table")
+                                                         
+                                     )),
+                                     
+                                     shinyjs::hidden(div(id = "div.Custom.Results",
+                                                         
+                                                         hr(style = "margin: 0px 0 10px 0; border: .5px solid #00008B"),
+                                                         
+                                                         h5(withMathJax("\\(Custom \\space model:\\)"), style = "color: DarkBlue"),
+                                                         
+                                                         tableOutput("Custom.Table")
                                                          
                                      ))
                                      # verbatimTextOutput("Lin.Results")

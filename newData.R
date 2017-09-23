@@ -40,6 +40,9 @@ V$Group.Cat.Color[[i]] <- FALSE
 V$Group.Fit.Linear[[i]] <- FALSE
 V$Group.Fit.Quadratic[[i]] <- FALSE
 V$Group.Fit.Power[[i]] <- FALSE
+V$Group.Fit.Custom[[i]] <- FALSE
+V$form[[i]] <- "not fitted"
+V$params[[i]] <- "not fitted"
 
 #disable the dataset switch observer action
 new.upload <<- TRUE
