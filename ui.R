@@ -479,88 +479,104 @@ shinyUI(
                                          shinyjs::hidden(div(id = "div.Models",
                                                              br(),
                                                              
+                                                             h5("Fit model", style="font-weight: bold; color: DarkBlue"),
+                                                             
+                                                             checkboxGroupInput("Models", NULL, inline = TRUE,
+                                                                                choices = c("Linear", "Quadratic", "Power", "Custom"),
+                                                                                selected = NULL),
+                                                             
                                                              
                                                              #Linear
-                                                             h5("Linear model", style="margin: 0px; font-weight: bold; color: DarkBlue"),
-                                                             
-                                                             fluidRow(
-                                                                 column(width = 6,
-                                                                        checkboxGroupInput("Fit.Linear", NULL,
-                                                                                           choices = c("Fit linear model", "Show results"),
-                                                                                           selected = NULL)
-                                                                        
-                                                                 ),
-                                                                 column(width = 6,
-                                                                        colourInput("Color.Linear", "Color", value = "black",
-                                                                                    palette = "limited", showColour = "background")
-                                                                 )
-                                                             ),
-                                                             
-                                                             fluidRow(
-                                                                 column(width = 6,
-                                                                        numericInput("Size.Linear", "Thickness", value = sels$Size.Linear, min = 0.5, max = 5, step = 0.5)
-                                                                 ),
-                                                                 
-                                                                 column(width = 6,
-                                                                        selectInput("Type.Linear", "Line type", choices = lty, selected = lty[1])
-                                                                 )
-                                                             ),
+                                                             shinyjs::hidden(div(id = "div.Linear",
+                                                                                 hr(style = "margin: 0px 0 10px 0; border: .5px solid #00008B"),
+                                                                                 h5("Linear model", style="margin: 0px; font-weight: bold; color: DarkBlue"),
+                                                                                 
+                                                                                 fluidRow(
+                                                                                     column(width = 6,
+                                                                                            checkboxGroupInput("Fit.Linear", NULL,
+                                                                                                               choices = c("Show results"),
+                                                                                                               selected = NULL)
+                                                                                            
+                                                                                     ),
+                                                                                     column(width = 6,
+                                                                                            colourInput("Color.Linear", "Color", value = "black",
+                                                                                                        palette = "limited", showColour = "background")
+                                                                                     )
+                                                                                 ),
+                                                                                 
+                                                                                 fluidRow(
+                                                                                     column(width = 6,
+                                                                                            numericInput("Size.Linear", "Thickness", value = sels$Size.Linear, min = 0.5, max = 5, step = 0.5)
+                                                                                     ),
+                                                                                     
+                                                                                     column(width = 6,
+                                                                                            selectInput("Type.Linear", "Line type", choices = lty, selected = lty[1])
+                                                                                     )
+                                                                                 )
+                                                             )),
                                                              
                                                              
                                                              #Quadratic
-                                                             hr(style = "margin: 0px 0 10px 0; border: .5px solid #00008B"),
-                                                             h5("Quadratic model", style="margin: 0px; font-weight: bold; color: DarkBlue"),
-                                                             
-                                                             fluidRow(
-                                                                 column(width = 6,
-                                                                        checkboxGroupInput("Fit.Quadratic", NULL,
-                                                                                           choices = c("Fit quadratic model", "Show results"),
-                                                                                           selected = NULL)
-                                                                        
-                                                                 ),
-                                                                 column(width = 6,
-                                                                        colourInput("Color.Quadratic", "Color", value = "black",
-                                                                                    palette = "limited", showColour = "background")
-                                                                 )
-                                                             ),
-                                                             
-                                                             fluidRow(
-                                                                 column(width = 6,
-                                                                        numericInput("Size.Quadratic", "Thickness", value = 1, min = 0.5, max = 5, step = 0.5)
-                                                                 ),
-                                                                 
-                                                                 column(width = 6,
-                                                                        selectInput("Type.Quadratic", "Line type", choices = lty, selected = lty[1])
-                                                                 )
-                                                             ),
+                                                             shinyjs::hidden(div(id = "div.Quadratic",
+                                                                                 
+                                                                                 hr(style = "margin: 0px 0 10px 0; border: .5px solid #00008B"),
+                                                                                 h5("Quadratic model", style="margin: 0px; font-weight: bold; color: DarkBlue"),
+                                                                                 
+                                                                                 fluidRow(
+                                                                                     column(width = 6,
+                                                                                            checkboxGroupInput("Fit.Quadratic", NULL,
+                                                                                                               choices = c("Show results"),
+                                                                                                               selected = NULL)
+                                                                                            
+                                                                                     ),
+                                                                                     column(width = 6,
+                                                                                            colourInput("Color.Quadratic", "Color", value = "black",
+                                                                                                        palette = "limited", showColour = "background")
+                                                                                     )
+                                                                                 ),
+                                                                                 
+                                                                                 fluidRow(
+                                                                                     column(width = 6,
+                                                                                            numericInput("Size.Quadratic", "Thickness", value = 1, min = 0.5, max = 5, step = 0.5)
+                                                                                     ),
+                                                                                     
+                                                                                     column(width = 6,
+                                                                                            selectInput("Type.Quadratic", "Line type", choices = lty, selected = lty[1])
+                                                                                     )
+                                                                                 )
+                                                             )),
                                                              
                                                              
                                                              #Power    
-                                                             hr(style = "margin: 0px 0 10px 0; border: .5px solid #00008B"),
-                                                             h5("Power model", style="margin: 0px; font-weight: bold; color: DarkBlue"),
-                                                             
-                                                             fluidRow(
-                                                                 column(width = 6,
-                                                                        checkboxGroupInput("Fit.Power", NULL,
-                                                                                           choices = c("Fit power model", "Show results"),
-                                                                                           selected = NULL)
-                                                                        
-                                                                 ),
-                                                                 column(width = 6,
-                                                                        colourInput("Color.Power", "Color", value = "black",
-                                                                                    palette = "limited", showColour = "background")
-                                                                 )
-                                                             ),
-                                                             
-                                                             fluidRow(
-                                                                 column(width = 6,
-                                                                        numericInput("Size.Power", "Thickness", value = 1, min = 0.5, max = 5, step = 0.5)
-                                                                 ),
-                                                                 
-                                                                 column(width = 6,
-                                                                        selectInput("Type.Power", "Line type", choices = lty, selected = lty[1])
-                                                                 )
-                                                             ),
+                                                             shinyjs::hidden(div(id = "div.Power",
+                                                                                 
+                                                                                 hr(style = "margin: 0px 0 10px 0; border: .5px solid #00008B"),
+                                                                                 h5("Power model", style="margin: 0px; font-weight: bold; color: DarkBlue"),
+                                                                                 
+                                                                                 fluidRow(
+                                                                                     column(width = 6,
+                                                                                            checkboxGroupInput("Fit.Power", NULL,
+                                                                                                               choices = c("Show results"),
+                                                                                                               selected = NULL)
+                                                                                            
+                                                                                     ),
+                                                                                     column(width = 6,
+                                                                                            colourInput("Color.Power", "Color", value = "black",
+                                                                                                        palette = "limited", showColour = "background")
+                                                                                     )
+                                                                                 ),
+                                                                                 
+                                                                                 fluidRow(
+                                                                                     column(width = 6,
+                                                                                            numericInput("Size.Power", "Thickness", value = 1, min = 0.5, max = 5, step = 0.5)
+                                                                                     ),
+                                                                                     
+                                                                                     column(width = 6,
+                                                                                            selectInput("Type.Power", "Line type", choices = lty, selected = lty[1])
+                                                                                     )
+                                                                                 )
+                                                                                 
+                                                             )),
                                                              
                                                              
                                                              #Hidden inputs
@@ -706,25 +722,34 @@ shinyUI(
                                                          # splitLayout(h4("Linear equation:", style="color: DarkBlue"),
                                                          #             h4(withMathJax("$$Y = a + bX$$"))
                                                          #             ),
+                                                         hr(style = "margin: 0px 0 10px 0; border: .5px solid #00008B"),
                                                          
-                                                         h4(withMathJax("$$Linear \\space model: \\space\\space Y = a + bX$$")),
+                                                         h5(withMathJax("\\(Linear \\space model: \\space\\space Y = a + bX\\)"), style = "color: DarkBlue"),
                                                          
-                                                         verbatimTextOutput("Linear.Results")
+                                                         tableOutput("Linear.Table")
+                                                         
+                                                         # verbatimTextOutput("Linear.Results")
                                                          
                                      )),
                                      
                                      shinyjs::hidden(div(id = "div.Quadratic.Results",
                                                          
-                                                         h4(withMathJax("$$Quadratic \\space model: \\space\\space Y = a + bX + cX^2$$")),
+                                                         hr(style = "margin: 0px 0 10px 0; border: .5px solid #00008B"),
                                                          
-                                                         verbatimTextOutput("Quadratic.Results")
+                                                         h5(withMathJax("\\(Quadratic \\space model: \\space\\space Y = a + bX + cX^2\\)"), style = "color: DarkBlue"),
+                                                         
+                                                         
+                                                         
+                                                         tableOutput("Poly.Table")
                                      )),
                                      
                                      shinyjs::hidden(div(id = "div.Power.Results",
                                                          
-                                                         h4(withMathJax("$$Power \\space model: \\space\\space Y = aX^b$$")),
+                                                         hr(style = "margin: 0px 0 10px 0; border: .5px solid #00008B"),
                                                          
-                                                         verbatimTextOutput("Power.Results")
+                                                         h5(withMathJax("\\(Power \\space model: \\space\\space Y = aX^b\\)"), style = "color: DarkBlue"),
+                                                         
+                                                         tableOutput("Power.Table")
                                                          
                                      ))
                                      # verbatimTextOutput("Lin.Results")

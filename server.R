@@ -426,7 +426,7 @@ shinyServer(function(input, output, session) {
                     #Update model fit options
                     if (!V$Group.Fit.Linear[[V$Current]]){  #if this isn't there you can end up with rapid switch back and forth - can't stop!
                         current.fit.lin <- input$Fit.Linear
-                        updateCheckboxGroupInput(session, "Fit.Linear", choices = c("Fit linear model", "Fit by group", "Show results"),
+                        updateCheckboxGroupInput(session, "Fit.Linear", choices = c("Fit by group", "Show results"),
                                                  selected = current.fit.lin)
                         V$Group.Fit.Linear[[V$Current]] <- TRUE
                         
@@ -435,7 +435,7 @@ shinyServer(function(input, output, session) {
                     
                     if (!V$Group.Fit.Quadratic[[V$Current]]){ 
                         current.fit.qua <- input$Fit.Quadratic
-                        updateCheckboxGroupInput(session, "Fit.Quadratic", choices = c("Fit quadratic model", "Fit by group", "Show results"),
+                        updateCheckboxGroupInput(session, "Fit.Quadratic", choices = c("Fit by group", "Show results"),
                                                  selected = current.fit.qua)
                         V$Group.Fit.Quadratic[[V$Current]] <- TRUE
                         
@@ -443,7 +443,7 @@ shinyServer(function(input, output, session) {
                     
                     if (!V$Group.Fit.Power[[V$Current]]){ 
                         current.fit.pow <- input$Fit.Power
-                        updateCheckboxGroupInput(session, "Fit.Power", choices = c("Fit power model", "Fit by group", "Show results"),
+                        updateCheckboxGroupInput(session, "Fit.Power", choices = c("Fit by group", "Show results"),
                                                  selected = current.fit.pow)
                         V$Group.Fit.Power[[V$Current]] <- TRUE
                         
@@ -509,17 +509,17 @@ shinyServer(function(input, output, session) {
                     #Update model fit options
                
                     current.fit.lin <- grep("group", input$Fit.Linear, value = TRUE, invert = TRUE)
-                    updateCheckboxGroupInput(session, "Fit.Linear", choices = c("Fit linear model", "Show results"),
+                    updateCheckboxGroupInput(session, "Fit.Linear", choices = c("Show results"),
                                              selected = current.fit.lin)
                     V$Group.Fit.Linear[[V$Current]] <- FALSE
                     
                     current.fit.qua <- grep("group", input$Fit.Quadratic, value = TRUE, invert = TRUE)
-                    updateCheckboxGroupInput(session, "Fit.Quadratic", choices = c("Fit quadratic model", "Show results"),
+                    updateCheckboxGroupInput(session, "Fit.Quadratic", choices = c("Show results"),
                                              selected = current.fit.qua)
                     V$Group.Fit.Quadratic[[V$Current]] <- FALSE
                     
                     current.fit.pow <- grep("group", input$Fit.Power, value = TRUE, invert = TRUE)
-                    updateCheckboxGroupInput(session, "Fit.Power", choices = c("Fit power model", "Show results"),
+                    updateCheckboxGroupInput(session, "Fit.Power", choices = c("Show results"),
                                              selected = current.fit.pow)
                     V$Group.Fit.Power[[V$Current]] <- FALSE
                     
@@ -575,6 +575,9 @@ shinyServer(function(input, output, session) {
         if(V$ON){
             
             if (input$Subset_dy != "(none)"){
+                
+                #need to refactor sometimes. might have to do with excel vs csv  - crashes on switch?!
+                V$Data[[V$Current]][,input$Subset_dy] <- factor(V$Data[[V$Current]][,input$Subset_dy])
                 
                 V$Choices[[V$Current]]$SubSel_dy <- levels(V$Data[[V$Current]][,input$Subset_dy])
                 
@@ -873,7 +876,8 @@ shinyServer(function(input, output, session) {
                 #Fit models
                 
                 #Linear model
-                if (any(grepl("model", input$Fit.Linear))) {
+                # if (any(grepl("model", input$Fit.Linear))) {
+                if (any(grepl("Linear", input$Models))) {
                     
                     if (any(grepl("group", input$Fit.Linear)) && input$Group_dy != "(none)"){
                         
@@ -893,7 +897,7 @@ shinyServer(function(input, output, session) {
                 }
                 
                 #Quadratic model
-                if (any(grepl("model", input$Fit.Quadratic))) {
+                if (any(grepl("Quadratic", input$Models))) {
                     
                     if (any(grepl("group", input$Fit.Quadratic)) && input$Group_dy != "(none)"){
                         
@@ -914,7 +918,7 @@ shinyServer(function(input, output, session) {
                 
                 
                 #Power model
-                if (any(grepl("model", input$Fit.Power))) {
+                if (any(grepl("Power", input$Models))) {
                     
                     if (any(grepl("group", input$Fit.Power)) && input$Group_dy != "(none)"){
                         
@@ -1396,9 +1400,37 @@ shinyServer(function(input, output, session) {
         
     })
     
+    #Model panels observer
     observe({
         
-        if (any(grepl("results", input$Fit.Linear))){
+        if (any(grepl("Linear", input$Models))){
+            shinyjs::show("div.Linear")            
+        } else {
+            shinyjs::hide("div.Linear")
+        }    
+            
+        if (any(grepl("Quadratic", input$Models))){
+            shinyjs::show("div.Quadratic")            
+        } else {
+            shinyjs::hide("div.Quadratic")
+        }    
+        
+        if (any(grepl("Power", input$Models))){
+            shinyjs::show("div.Power")            
+        } else {
+            shinyjs::hide("div.Power")
+        }    
+        
+        
+        
+    })
+    
+    
+    
+    #Model results observer
+    observe({
+        
+        if (any(grepl("results", input$Fit.Linear)) && any(grepl("Linear", input$Models))){
             
             shinyjs::show("div.Linear.Results")            
         } else {
@@ -1406,7 +1438,7 @@ shinyServer(function(input, output, session) {
             
         }
         
-        if (any(grepl("results", input$Fit.Quadratic))){
+        if (any(grepl("results", input$Fit.Quadratic)) && any(grepl("Quadratic", input$Models))){
             
             shinyjs::show("div.Quadratic.Results")            
         } else {
@@ -1414,7 +1446,7 @@ shinyServer(function(input, output, session) {
             
         }
         
-        if (any(grepl("results", input$Fit.Power))){
+        if (any(grepl("results", input$Fit.Power)) && any(grepl("Power", input$Models))){
             
             shinyjs::show("div.Power.Results")            
         } else {
@@ -1424,11 +1456,11 @@ shinyServer(function(input, output, session) {
         
     })
     
-    #Linear model results
-    output$Linear.Results <- renderPrint({
+    #Linear model output
+    output$Linear.Table <- renderTable({
         
         #only if x and y are selected
-        if (input$X_dy != "(none)" & input$Y_dy != "(none)" & any(grepl("model", input$Fit.Linear)) & any(grepl("results", input$Fit.Linear))){
+        if (input$X_dy != "(none)" & input$Y_dy != "(none)" & any(grepl("Linear", input$Models)) & any(grepl("results", input$Fit.Linear))){
             
             X <- V$Data[[V$Current]][,input$X_dy]
             Y <- V$Data[[V$Current]][,input$Y_dy]
@@ -1440,53 +1472,73 @@ shinyServer(function(input, output, session) {
                 Group <- TRUE
                 D$Group <- V$Data[[V$Current]][,input$Group_dy]
                 D <- D[complete.cases(D$X, D$Y, D$Group),]
+                D$Group <- factor(D$Group)
             } else {
                 Group <- FALSE
                 D <- D[complete.cases(D$X, D$Y),]
             }
-        
+            
+            
+            fit <- list()
+            
+            if (!Group){
                 
-                fit <- list()
+                fit[[1]] <- lm(Y ~ X, data = D)
                 
-                if (!Group){
+                # tab <- data.frame(NO.NAME = "Parameter values", a = signif(fit[[1]]$coefficients[1],3), b = signif(fit[[1]]$coefficients[2],3))
+                tab <- data.frame(NO.NAME = "Parameter values",
+                                  a = sprintf("%5.4g", fit[[1]]$coefficients[1]),
+                                  b = sprintf("%5.4g", fit[[1]]$coefficients[2]))
+                
+                
+                names(tab)[1] <- ""
+                
+                
+            } else {
+                
+                n <- nlevels(D$Group)
+                
+                # tab <- data.frame(Group = character(n), a = numeric(n), b = numeric(n),
+                #                   stringsAsFactors = FALSE)
+                
+                tab <- data.frame(Group = character(n), a = character(n), b = character(n),
+                                  stringsAsFactors = FALSE)
+                
+                for (i in 1:n){
                     
-                    fit[[1]] <- lm(Y ~ X, data = D)
+                    d <- subset(D, Group == levels(D$Group)[i])
                     
-                    sum.fit <- paste("\t\t",            "\t", "\t", "a",                                    "\t\t", "b",         "\n",
-                                       "Parameter values","\t", "\t", signif(fit[[1]]$coefficients[1],3), "\t\t", signif(fit[[1]]$coefficients[2],3),
-                                       sep="")
+                    fit[[i]] <- lm(Y ~ X, data = d)
                     
-                } else {
+                    tab$Group[i] <- levels(D$Group)[i]
                     
-                    sum.fit <- paste("Group", "\t\t",            "\t", "\t", "a",                                    "\t\t", "b", sep="")
+                    tab$a[i] <- sprintf("%5.4g", fit[[i]]$coefficients[1])
+                    tab$b[i] <- sprintf("%5.4g", fit[[i]]$coefficients[2])
                     
-                    for (i in 1:nlevels(D$Group)){
-                        
-                        d <- subset(D, Group == levels(D$Group)[i])
-                        
-                        fit[[i]] <- lm(Y ~ X, data = d)
-                        
-                        Group.name <- name.len(levels(D$Group)[i])
-                        
-                        sum.fit <- paste(sum.fit,"\n",
-                                           Group.name, "\t", signif(fit[[i]]$coefficients[1],3), "\t\t", signif(fit[[i]]$coefficients[2],3),
-                                           sep = "")
-                        
-                    }
+                    # tab$a[i] <- signif(fit[[i]]$coefficients[1],5)
+                    # tab$b[i] <- signif(fit[[i]]$coefficients[2],5)
                     
                 }
                 
-                writeLines(sum.fit)
-                
-        }  
+            }
+            
+            return(tab)
+            
+        }  else {
+            
+            return()
+        }
+        
         
     })
     
-    #Quadratic results
-    output$Quadratic.Results <- renderPrint({
+    
+    
+    #Polynomial model output
+    output$Poly.Table <- renderTable({
         
         #only if x and y are selected
-        if (input$X_dy != "(none)" & input$Y_dy != "(none)" & any(grepl("model", input$Fit.Quadratic)) & any(grepl("results", input$Fit.Quadratic))){
+        if (input$X_dy != "(none)" & input$Y_dy != "(none)" & any(grepl("Quadratic", input$Models)) & any(grepl("results", input$Fit.Quadratic))){
             
             X <- V$Data[[V$Current]][,input$X_dy]
             Y <- V$Data[[V$Current]][,input$Y_dy]
@@ -1498,57 +1550,71 @@ shinyServer(function(input, output, session) {
                 Group <- TRUE
                 D$Group <- V$Data[[V$Current]][,input$Group_dy]
                 D <- D[complete.cases(D$X, D$Y, D$Group),]
+                D$Group <- factor(D$Group)
             } else {
                 Group <- FALSE
                 D <- D[complete.cases(D$X, D$Y),]
             }
             
-            #Linear fit
-            # if (any(grepl("results", input$Fit.Linear))){
+            ord <- 2 #in place for higher order polynomials
             
             fit <- list()
             
             if (!Group){
                 
-                fit[[1]] <- lm(Y ~ X + I(X^2), data = D)
+                fit[[1]] <- lm(Y ~ poly(X, ord, raw = TRUE), data = D)
                 
-                sum.fit <- paste("\t\t",              "\t", "\t", "a",                                  "\t\t", "b",                                   "\t\t", "c","\n",
-                                   "Parameter values","\t", "\t", signif(fit[[1]]$coefficients[1],3),   "\t\t", signif(fit[[1]]$coefficients[2],3),    "\t\t", signif(fit[[1]]$coefficients[3],3),
-                                   sep="")
+                tab <- data.frame(NO.NAME = "Parameter values")
+                names(tab)[1] <- ""
+                
+                for (j in 1:(ord+1)){ #stucture in place for higher order polynomials
+                    
+                    # tab[1, letters[j]] <- signif(fit[[1]]$coefficients[j],5)
+                    tab[1, letters[j]] <- sprintf("%5.4g", fit[[1]]$coefficients[j])
+                    
+                }
                 
             } else {
                 
-                sum.fit <- paste("Group", "\t\t",            "\t", "\t", "a",                                    "\t\t", "b", "\t\t", "c",sep="")
+                n <- nlevels(D$Group)
                 
-                for (i in 1:nlevels(D$Group)){
+                tab <- data.frame(Group = character(n), stringsAsFactors = FALSE)
+                
+                for (i in 1:n){
                     
                     d <- subset(D, Group == levels(D$Group)[i])
                     
-                    fit[[i]] <- lm(Y ~ X + I(X^2), data = d)
+                    fit[[i]] <- lm(Y ~ poly(X, ord, raw = TRUE), data = d)
                     
-                    Group.name <- name.len(levels(D$Group)[i])
+                    tab$Group[i] <- levels(D$Group)[i]
                     
-                    sum.fit <- paste(sum.fit,"\n",
-                                       Group.name, "\t", signif(fit[[i]]$coefficients[1],3),   "\t\t", signif(fit[[i]]$coefficients[2],3),    "\t\t", signif(fit[[i]]$coefficients[3],3),
-                                       sep = "")
+                    for (j in 1:3){ #stucture in place for higher order polynomials
+                        
+                        # tab[i, letters[j]] <- signif(fit[[i]]$coefficients[j],5)
+                        tab[i, letters[j]] <- sprintf("%5.4g", fit[[i]]$coefficients[j])
+                        
+                    }
                     
                 }
                 
             }
             
-            writeLines(sum.fit)
+            return(tab)
             
-          
-        }  
+        }  else {
+            
+            return()
+        }
+        
         
     })
-
     
-    #Linear model results
-    output$Power.Results <- renderPrint({
+    
+    #Power model output
+    output$Power.Table <- renderTable({
         
         #only if x and y are selected
-        if (input$X_dy != "(none)" & input$Y_dy != "(none)" & any(grepl("model", input$Fit.Power)) & any(grepl("results", input$Fit.Power))){
+        if (input$X_dy != "(none)" & input$Y_dy != "(none)" & any(grepl("Power", input$Models)) & any(grepl("results", input$Fit.Power))){
             
             X <- V$Data[[V$Current]][,input$X_dy]
             Y <- V$Data[[V$Current]][,input$Y_dy]
@@ -1560,6 +1626,7 @@ shinyServer(function(input, output, session) {
                 Group <- TRUE
                 D$Group <- V$Data[[V$Current]][,input$Group_dy]
                 D <- D[complete.cases(D$X, D$Y, D$Group),]
+                D$Group <- factor(D$Group)
             } else {
                 Group <- FALSE
                 D <- D[complete.cases(D$X, D$Y),]
@@ -1570,45 +1637,241 @@ shinyServer(function(input, output, session) {
             
             if (!Group){
                 
-                # 'nls', formula = y~a*x^b, method.args = list(start = list(a = 1, b=1), control = list(maxiter = 50000))
-                
                 fit[[1]] <- nls(Y ~ a*X^b, data = D, start = list(a = 1, b=1), control = list(maxiter = 50000))
                 
-                a <- summary(fit[[1]])$parameters[,1][1]
-                b <- summary(fit[[1]])$parameters[,1][2]
+                # tab <- data.frame(NO.NAME = "Parameter values", a = signif(fit[[1]]$coefficients[1],3), b = signif(fit[[1]]$coefficients[2],3))
+                tab <- data.frame(NO.NAME = "Parameter values",
+                                  a = sprintf("%5.4g", summary(fit[[1]])$parameters[,1][1]),
+                                  b = sprintf("%5.4g", summary(fit[[1]])$parameters[,1][2]))
                 
-                sum.fit <- paste("\t\t",            "\t", "\t", "a",                                    "\t\t", "b",         "\n",
-                                 "Parameter values","\t", "\t", signif(a,3), "\t\t", signif(b,3),
-                                 sep="")
+                
+                names(tab)[1] <- ""
+                
                 
             } else {
                 
-                sum.fit <- paste("Group", "\t\t",            "\t", "\t", "a",                                    "\t\t", "b", sep="")
+                n <- nlevels(D$Group)
                 
-                for (i in 1:nlevels(D$Group)){
+                # tab <- data.frame(Group = character(n), a = numeric(n), b = numeric(n),
+                #                   stringsAsFactors = FALSE)
+                
+                tab <- data.frame(Group = character(n), a = character(n), b = character(n),
+                                  stringsAsFactors = FALSE)
+                
+                for (i in 1:n){
                     
                     d <- subset(D, Group == levels(D$Group)[i])
                     
-                    fit[[1]] <- nls(Y ~ a*X^b, data = d, start = list(a = 1, b=1), control = list(maxiter = 50000))
+                    fit[[i]] <- nls(Y ~ a*X^b, data = d, start = list(a = 1, b=1), control = list(maxiter = 50000))
                     
-                    a <- summary(fit[[1]])$parameters[,1][1]
-                    b <- summary(fit[[1]])$parameters[,1][2]
+                    tab$Group[i] <- levels(D$Group)[i]
                     
-                    Group.name <- name.len(levels(D$Group)[i])
+                    tab$a[i] <- sprintf("%5.4g", summary(fit[[i]])$parameters[,1][1])
+                    tab$b[i] <- sprintf("%5.4g", summary(fit[[i]])$parameters[,1][2])
                     
-                    sum.fit <- paste(sum.fit,"\n",
-                                     Group.name, "\t", signif(a,3), "\t\t", signif(b,3),
-                                     sep = "")
+                    # tab$a[i] <- signif(fit[[i]]$coefficients[1],5)
+                    # tab$b[i] <- signif(fit[[i]]$coefficients[2],5)
                     
                 }
                 
             }
             
-            writeLines(sum.fit)
+            return(tab)
             
-        }  
+        }  else {
+            
+            return()
+        }
+        
         
     })
+    
+    
+    # #Linear model results
+    # output$Linear.Results <- renderPrint({
+    #     
+    #     #only if x and y are selected
+    #     if (input$X_dy != "(none)" & input$Y_dy != "(none)" & any(grepl("Linear", input$Models)) & any(grepl("results", input$Fit.Linear))){
+    #         
+    #         X <- V$Data[[V$Current]][,input$X_dy]
+    #         Y <- V$Data[[V$Current]][,input$Y_dy]
+    #         
+    #         D <- data.frame(X = X, Y = Y)
+    #         
+    #         #add in grouping variable
+    #         if (any(grepl("group", input$Fit.Linear))) {
+    #             Group <- TRUE
+    #             D$Group <- V$Data[[V$Current]][,input$Group_dy]
+    #             D <- D[complete.cases(D$X, D$Y, D$Group),]
+    #         } else {
+    #             Group <- FALSE
+    #             D <- D[complete.cases(D$X, D$Y),]
+    #         }
+    #     
+    #             
+    #             fit <- list()
+    #             
+    #             if (!Group){
+    #                 
+    #                 fit[[1]] <- lm(Y ~ X, data = D)
+    #                 
+    #                 sum.fit <- paste("\t\t",            "\t", "\t", "a",                                    "\t\t", "b",         "\n",
+    #                                    "Parameter values","\t", "\t", signif(fit[[1]]$coefficients[1],3), "\t\t", signif(fit[[1]]$coefficients[2],3),
+    #                                    sep="")
+    #                 
+    #             } else {
+    #                 
+    #                 sum.fit <- paste("Group", "\t\t",            "\t", "\t", "a",                                    "\t\t", "b", sep="")
+    #                 
+    #                 for (i in 1:nlevels(D$Group)){
+    #                     
+    #                     d <- subset(D, Group == levels(D$Group)[i])
+    #                     
+    #                     fit[[i]] <- lm(Y ~ X, data = d)
+    #                     
+    #                     Group.name <- name.len(levels(D$Group)[i])
+    #                     
+    #                     sum.fit <- paste(sum.fit,"\n",
+    #                                        Group.name, "\t", signif(fit[[i]]$coefficients[1],3), "\t\t", signif(fit[[i]]$coefficients[2],3),
+    #                                        sep = "")
+    #                     
+    #                 }
+    #                 
+    #             }
+    #             
+    #             writeLines(sum.fit)
+    #             
+    #     }  
+    #     
+    # })
+    # 
+    # #Quadratic results
+    # output$Quadratic.Results <- renderPrint({
+    #     
+    #     #only if x and y are selected
+    #     if (input$X_dy != "(none)" & input$Y_dy != "(none)" & any(grepl("model", input$Fit.Quadratic)) & any(grepl("results", input$Fit.Quadratic))){
+    #         
+    #         X <- V$Data[[V$Current]][,input$X_dy]
+    #         Y <- V$Data[[V$Current]][,input$Y_dy]
+    #         
+    #         D <- data.frame(X = X, Y = Y)
+    #         
+    #         #add in grouping variable
+    #         if (any(grepl("group", input$Fit.Quadratic))) {
+    #             Group <- TRUE
+    #             D$Group <- V$Data[[V$Current]][,input$Group_dy]
+    #             D <- D[complete.cases(D$X, D$Y, D$Group),]
+    #         } else {
+    #             Group <- FALSE
+    #             D <- D[complete.cases(D$X, D$Y),]
+    #         }
+    #         
+    #         #Linear fit
+    #         # if (any(grepl("results", input$Fit.Linear))){
+    #         
+    #         fit <- list()
+    #         
+    #         if (!Group){
+    #             
+    #             fit[[1]] <- lm(Y ~ X + I(X^2), data = D)
+    #             
+    #             sum.fit <- paste("\t\t",              "\t", "\t", "a",                                  "\t\t", "b",                                   "\t\t", "c","\n",
+    #                                "Parameter values","\t", "\t", signif(fit[[1]]$coefficients[1],3),   "\t\t", signif(fit[[1]]$coefficients[2],3),    "\t\t", signif(fit[[1]]$coefficients[3],3),
+    #                                sep="")
+    #             
+    #         } else {
+    #             
+    #             sum.fit <- paste("Group", "\t\t",            "\t", "\t", "a",                                    "\t\t", "b", "\t\t", "c",sep="")
+    #             
+    #             for (i in 1:nlevels(D$Group)){
+    #                 
+    #                 d <- subset(D, Group == levels(D$Group)[i])
+    #                 
+    #                 fit[[i]] <- lm(Y ~ X + I(X^2), data = d)
+    #                 
+    #                 Group.name <- name.len(levels(D$Group)[i])
+    #                 
+    #                 sum.fit <- paste(sum.fit,"\n",
+    #                                    Group.name, "\t", signif(fit[[i]]$coefficients[1],3),   "\t\t", signif(fit[[i]]$coefficients[2],3),    "\t\t", signif(fit[[i]]$coefficients[3],3),
+    #                                    sep = "")
+    #                 
+    #             }
+    #             
+    #         }
+    #         
+    #         writeLines(sum.fit)
+    #         
+    #       
+    #     }  
+    #     
+    # })
+    # 
+    # 
+    # #Linear model results
+    # output$Power.Results <- renderPrint({
+    #     
+    #     #only if x and y are selected
+    #     if (input$X_dy != "(none)" & input$Y_dy != "(none)" & any(grepl("model", input$Fit.Power)) & any(grepl("results", input$Fit.Power))){
+    #         
+    #         X <- V$Data[[V$Current]][,input$X_dy]
+    #         Y <- V$Data[[V$Current]][,input$Y_dy]
+    #         
+    #         D <- data.frame(X = X, Y = Y)
+    #         
+    #         #add in grouping variable
+    #         if (any(grepl("group", input$Fit.Power))) {
+    #             Group <- TRUE
+    #             D$Group <- V$Data[[V$Current]][,input$Group_dy]
+    #             D <- D[complete.cases(D$X, D$Y, D$Group),]
+    #         } else {
+    #             Group <- FALSE
+    #             D <- D[complete.cases(D$X, D$Y),]
+    #         }
+    #         
+    #         
+    #         fit <- list()
+    #         
+    #         if (!Group){
+    #             
+    #             # 'nls', formula = y~a*x^b, method.args = list(start = list(a = 1, b=1), control = list(maxiter = 50000))
+    #             
+    #             fit[[1]] <- nls(Y ~ a*X^b, data = D, start = list(a = 1, b=1), control = list(maxiter = 50000))
+    #             
+    #             a <- summary(fit[[1]])$parameters[,1][1]
+    #             b <- summary(fit[[1]])$parameters[,1][2]
+    #             
+    #             sum.fit <- paste("\t\t",            "\t", "\t", "a",                                    "\t\t", "b",         "\n",
+    #                              "Parameter values","\t", "\t", signif(a,3), "\t\t", signif(b,3),
+    #                              sep="")
+    #             
+    #         } else {
+    #             
+    #             sum.fit <- paste("Group", "\t\t",            "\t", "\t", "a",                                    "\t\t", "b", sep="")
+    #             
+    #             for (i in 1:nlevels(D$Group)){
+    #                 
+    #                 d <- subset(D, Group == levels(D$Group)[i])
+    #                 
+    #                 fit[[1]] <- nls(Y ~ a*X^b, data = d, start = list(a = 1, b=1), control = list(maxiter = 50000))
+    #                 
+    #                 a <- summary(fit[[1]])$parameters[,1][1]
+    #                 b <- summary(fit[[1]])$parameters[,1][2]
+    #                 
+    #                 Group.name <- name.len(levels(D$Group)[i])
+    #                 
+    #                 sum.fit <- paste(sum.fit,"\n",
+    #                                  Group.name, "\t", signif(a,3), "\t\t", signif(b,3),
+    #                                  sep = "")
+    #                 
+    #             }
+    #             
+    #         }
+    #         
+    #         writeLines(sum.fit)
+    #         
+    #     }  
+    #     
+    # })
     
     # # # DISPLAY DIAGNOSTICS TEXT - need to enable ...textOutput("Text")... in ui.R
     output$Text <- renderPrint(

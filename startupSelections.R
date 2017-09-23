@@ -46,7 +46,7 @@ sels <- list(
     ymin = "",
     ymax = "",
     Width = "",
-    Height = "550",
+    Height = "500",
     Sym.Color = "#000000",
     Sym.Size = 3,
     Sym.Stroke = 1,
