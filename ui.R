@@ -31,7 +31,7 @@ shinyUI(
             # and number of observations to generate. Note the use of the br()
             # element to introduce extra vertical spacing
             sidebarPanel(
-                h3("Wellesley Data Explorer (Dev 2.00d)", style="color: DarkBlue; margin-top: 0;"),
+                h3("Wellesley Data Explorer", style="color: DarkBlue; margin-top: 0;"),
                 
                 ## UPLOAD DATA
                 conditionalPanel(
@@ -840,7 +840,7 @@ shinyUI(
                                      
                                      br(),
                                      
-                                     h4("Version 2.01  (14 September 2017)"),
+                                     h4("Version 2.02  (24 September 2017)"),
                                      br(),
                                      h5("Created by Alden Griffith (Environmental Studies) and Hannah Murphy ('19)"),
                                      br(),
@@ -851,32 +851,32 @@ shinyUI(
                                      br(),
                                      h5("Not fully developed:"),
                                      h5("- Model fit colors / line type cannot yet be set according to the grouping variable"),
-                                     h5("- Fitted model information/results still in early development"),
+                                     h5("- Fitted model information/results still in development"),
                                      
                                      br()
                                      
                                      
                                      
-                            ),
-                            
-                            
-                            tabPanel("Development Notes",
-                                     
-                                     
-                                     br(),
-                                     
-                                     h4("V 2.00c:"),
-                                     h5("- Occasional temporary error warnings in plot window are set to white (invisible)."),
-                                     h5("- Perhaps reconsider the fitted models interface"),
-                                     h5("- Need to allow dataset switching memory for fitted model input objects"),
-                                     
-                                     br(),
-                                     
-                                     #Diagnostic Panel
-                                     h4("Diagnotic text output:"),
-                                     verbatimTextOutput("Text")
-                                     
                             )
+                            
+                            
+                            # tabPanel("Development Notes",
+                            #          
+                            #          
+                            #          br(),
+                            #          
+                            #          h4("V 2.00c:"),
+                            #          h5("- Occasional temporary error warnings in plot window are set to white (invisible)."),
+                            #          h5("- Perhaps reconsider the fitted models interface"),
+                            #          h5("- Need to allow dataset switching memory for fitted model input objects"),
+                            #          
+                            #          br(),
+                            #          
+                            #          #Diagnostic Panel
+                            #          h4("Diagnotic text output:"),
+                            #          verbatimTextOutput("Text")
+                            #          
+                            # )
                 ) #end of tabset panel within mainpanel
                 , width = 8) #end of mainPanel
         ) 
