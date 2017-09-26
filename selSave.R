@@ -36,7 +36,8 @@ V$Sel[[V$Current]] <- list(
     Trans.Log = input$Trans.Log,
     Trans.Std = input$Trans.Std,
     Fit.Models = input$Fit.Models,
-  
+    Models = input$Models,  
+    
     # # # Static objects without choices
     xlab = input$xlab,
     xlab.Rotate = input$xlab.Rotate,

@@ -42,6 +42,7 @@ updateSelectInput(session, "Legend.Position", choices = choices$Legend.Position,
 updateCheckboxGroupInput(session, "Trans.Log", choices = choices$Trans.Log, selected = V$Sel[[i]]$Trans.Log)
 updateCheckboxGroupInput(session, "Trans.Std", choices = choices$Trans.Std, selected = V$Sel[[i]]$Trans.Std)
 updateCheckboxGroupInput(session, "Fit.Models", choices = choices$Fit.Models, selected = V$Sel[[i]]$Fit.Models)
+updateCheckboxGroupInput(session, "Models", NULL, inline = TRUE, choices = choices$Models, selected = V$Sel[[i]]$Models)
 
 # # # Static objects without choices
 updateTextInput(session, "xlab", value = V$Sel[[i]]$xlab)

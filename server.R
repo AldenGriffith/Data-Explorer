@@ -2113,7 +2113,7 @@ shinyServer(function(input, output, session) {
         #length(V$Data)
         # str(as.numeric(input$which.file))
         # print(paste(V$New.Upload, V$Current, length(V$Data), sep=" || "))
-        V$form
+        str(isolate(input),1)
         
         # print(paste(input$Trans.Log))
         # print(str(input,1))

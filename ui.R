@@ -482,8 +482,8 @@ shinyUI(
                                                              h5("Fit model", style="font-weight: bold; color: DarkBlue"),
                                                              
                                                              checkboxGroupInput("Models", NULL, inline = TRUE,
-                                                                                choices = c("Linear", "Quadratic", "Power", "Custom"),
-                                                                                selected = NULL),
+                                                                                choices = choices$Models,
+                                                                                selected = sels$Models),
                                                              
                                                              
                                                              #Linear
@@ -630,7 +630,7 @@ shinyUI(
                                                              #Hidden inputs
                                                              shinyjs::hidden(div(
                                                                  checkboxGroupInput("Fit.Models", "Fit models:",
-                                                                                    choices = choices$Fit.Models, selected = sels$Fit.Models),
+                                                                                    choices = choices$Fit.Models, selected = sels$Fit.Models),  #Can go!
                                                                  
                                                                  checkboxGroupInput("Trans.Log", "Log transformation",
                                                                                     choices = choices$Trans.Log, selected = sels$Fit.Models),

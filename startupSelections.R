@@ -33,6 +33,7 @@ sels <- list(
     Trans.Log = NULL,
     Trans.Std = NULL,
     Fit.Models = NULL,
+    Models = NULL,
     
     # # # Static objects without choices
     xlab = "",
