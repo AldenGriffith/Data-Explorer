@@ -479,7 +479,7 @@ shinyUI(
                                          shinyjs::hidden(div(id = "div.Models",
                                                              br(),
                                                              
-                                                             h5("Fit model", style="font-weight: bold; color: DarkBlue"),
+                                                             h5("Fit model (X is continuous)", style="font-weight: bold; color: DarkBlue"),
                                                              
                                                              checkboxGroupInput("Models", NULL, inline = TRUE,
                                                                                 choices = choices$Models,
@@ -640,7 +640,20 @@ shinyUI(
                                                                  
                                                              ))
                                                              
-                                         ))
+                                         )),
+                                         
+                                         
+                                         shinyjs::hidden(div(id = "div.Models.Cat",
+                                                             
+                                                            
+                                                             br(),
+                                                             
+                                                             h5("Fit model (X is categorical)", style="font-weight: bold; color: DarkBlue"),
+                                                             
+                                                             checkboxInput("ANOVA", "Perform Analysis of Variance (ANOVA)",
+                                                                           value = FALSE)
+                                                             
+                                                             ))
                                          
                                 )
                                 
@@ -809,7 +822,19 @@ shinyUI(
                                                          
                                                          tableOutput("Custom.Table")
                                                          
+                                     )),
+                                     
+                                     shinyjs::hidden(div(id = "div.ANOVA.Results",
+                                                         
+                                                         hr(style = "margin: 0px 0 10px 0; border: .5px solid #00008B"),
+                                                         
+                                                         h5("Analysis of Variance (ANOVA):", style = "color: DarkBlue"),
+                                                         #h5(withMathJax("\\(Custom \\space model:\\)"), style = "color: DarkBlue"),
+                                                         
+                                                         tableOutput("ANOVA.Table")
+                                                         
                                      ))
+                                     
                                      # verbatimTextOutput("Lin.Results")
                                      
                                      

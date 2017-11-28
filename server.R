@@ -242,6 +242,7 @@ shinyServer(function(input, output, session) {
                 
                 shinyjs::hide("div.CatOptions")
                 shinyjs::show("div.ScatterOptions")
+                shinyjs::hide("div.Models.Cat")
                 shinyjs::show("div.Models")
                 
                 
@@ -258,6 +259,7 @@ shinyServer(function(input, output, session) {
                 shinyjs::hide("div.ScatterOptions")
                 shinyjs::show("div.CatOptions")
                 shinyjs::hide("div.Models")
+                shinyjs::show("div.Models.Cat")
                 
                 shinyjs::hide("div.xminmax")
                 shinyjs::show("div.xpad")
@@ -270,6 +272,7 @@ shinyServer(function(input, output, session) {
             shinyjs::hide("div.ScatterOptions")
             shinyjs::hide("div.CatOptions")
             shinyjs::hide("div.Models")
+            shinyjs::hide("div.Models.Cat")
             
             shinyjs::show("div.NoVar.Appearance")
             shinyjs::show("div.NoVar.Axes")
@@ -1526,6 +1529,12 @@ shinyServer(function(input, output, session) {
 
         }
         
+        if (input$ANOVA){
+            shinyjs::show("div.ANOVA.Results")            
+        } else {
+            shinyjs::hide("div.ANOVA.Results")
+        }
+        
     })
     
     #Linear model output
@@ -1887,6 +1896,94 @@ shinyServer(function(input, output, session) {
                 
             }
             
+            return(tab)
+            
+        }  else {
+            
+            return()
+        }
+        
+    })
+    
+    
+    #Linear model output
+    output$ANOVA.Table <- renderTable({
+        
+        
+        #only if x and y are selected
+        if (input$X_dy != "(none)" & input$Y_dy != "(none)" & input$ANOVA){
+            
+            Data <- V$Data[[V$Current]]
+            
+            #Subset data
+            if (input$Subset_dy != "(none)" && !is.null(input$SubSel_dy)){
+                
+                Data <- subset(Data, is.element(Data[,input$Subset_dy], input$SubSel_dy))
+                
+                Data[,input$Subset_dy] <- factor (Data[,input$Subset_dy])
+            }
+            
+            X <- Data[,input$X_dy]
+            Y <- Data[,input$Y_dy]
+            
+            D <- data.frame(X = X, Y = Y)
+            
+            #add in grouping variable
+            if (input$Group_dy != "(none)") {
+                Group <- TRUE
+                D$Group <- Data[,input$Group_dy]
+                D <- D[complete.cases(D$X, D$Y, D$Group),]
+                D$Group <- factor(D$Group)
+                # message("GROUP!!!")
+                
+            } else {
+                Group <- FALSE
+                D <- D[complete.cases(D$X, D$Y),]
+            }
+            
+            
+            # fit <- list()
+            
+            if (!Group){
+                
+                fit <- lm(Y ~ X, data = D)
+                fit.anova <- anova(fit)
+                
+                r2 <- as.character(round(summary(fit)$r.squared,2))
+                r2 <- paste("R2 =", r2)
+                # tab <- data.frame(NO.NAME = "Parameter values", a = signif(fit[[1]]$coefficients[1],3), b = signif(fit[[1]]$coefficients[2],3))
+                tab <- data.frame(Effect = c(input$X_dy, "Residuals", r2),
+                                  df = c(as.character(fit.anova$Df), ""),
+                                  F = c(as.character((sprintf("%5.4g", fit.anova$`F value`[1]))), "", ""),
+                                  P = c(as.character((sprintf("%5.4g", fit.anova$`Pr(>F)`[1]))), "", ""))
+                
+                
+                # 
+                names(tab)[1] <- ""
+                # 
+                
+            } else {
+                # message("GROUP!!!")
+                
+                fit <- lm(Y ~ X*Group, data = D)
+                fit.anova <- anova(fit)
+                
+                tab <- data.frame(Effect = c(input$X_dy, input$Group_dy,
+                                             paste(input$X_dy, input$Group_dy, sep=" * "),
+                                             "Residuals"),
+                                  df = fit.anova$Df,
+                                  F = as.character(c(sprintf("%5.4g", fit.anova$`F value`[1:3]), "")),
+                                  P = as.character(c(sprintf("%5.4g", fit.anova$`Pr(>F)`[1:3]), "")))
+                
+                
+                # 
+                names(tab)[1] <- ""
+                
+            }
+            
+            
+            # print(anova(fit))
+            # return(anova(fit))
             return(tab)
             
         }  else {
