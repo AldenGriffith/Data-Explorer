@@ -31,7 +31,7 @@ shinyUI(
             # and number of observations to generate. Note the use of the br()
             # element to introduce extra vertical spacing
             sidebarPanel(
-                h3("Wellesley Data Explorer (Dev 2.02a)", style="color: DarkBlue; margin-top: 0;"),
+                h3("Wellesley Data Explorer", style="color: DarkBlue; margin-top: 0;"),
                 
                 ## UPLOAD DATA
                 conditionalPanel(
@@ -894,35 +894,39 @@ shinyUI(
                                      
                                      br(),
                                      
-                                     h4("Version 2.01  (14 September 2017)"),
+                                     h4("Version 2.03  (29 November 2017)"),
                                      br(),
-                                     h5("Created by Alden Griffith (Environmental Studies) and Hannah Murphy ('19)"),
+                                     h5("Created by Alden Griffith (Environmental Studies), Hannah Murphy ('19), Jeremy Wilmer (Psychology)"),
                                      br(),
                                      h5("Please send any comments / errors to agriffit@wellesley.edu"),
+                                     br(),
+                                     h5("New in this update:"),
+                                     h5("- Basic statistical tests with figures: regressions, one- and two-way ANOVAs"),
+                                     h5("- Variable transformation options"),
+                                     h5("- Improved behavior of model selections when switching between variables"),
                                      br(),
                                      h5("Known issues:"),
                                      h5("- Fitted model selections are not specific to datasets and will remain the same when switching datasets (will be fixed soon)"),
                                      br(),
                                      h5("Not fully developed:"),
                                      h5("- Model fit colors / line type cannot yet be set according to the grouping variable"),
-                                     h5("- Fitted model information/results still in early development"),
-                                     
+                                    
                                      br()
                                      
                                      
                                      
-                            ),
+                            )#,
                             
-                            
-                            tabPanel("Development",
-                                     
-                                     br(),
-                                     
-                                     #Diagnostic Panel
-                                     h4("Diagnotic text output:"),
-                                     verbatimTextOutput("Text")
-                                     
-                            )
+                            # 
+                            # tabPanel("Development",
+                            #          
+                            #          br(),
+                            #          
+                            #          #Diagnostic Panel
+                            #          h4("Diagnotic text output:"),
+                            #          verbatimTextOutput("Text")
+                            #          
+                            # )
                 ) #end of tabset panel within mainpanel
                 , width = 8) #end of mainPanel
         ) 
