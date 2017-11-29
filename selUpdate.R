@@ -39,8 +39,8 @@ updateSelectInput(session, "Title.Position", choices = choices$Title.Position, s
 checkboxGroupInput("Legend", "", inline = TRUE, choices = choices$Legend, selected = V$Sel[[i]]$Legend)
 updateSelectInput(session, "Legend.Position", choices = choices$Legend.Position, selected = V$Sel[[i]]$Legend.Position)
 
-updateCheckboxGroupInput(session, "Trans.Log", choices = choices$Trans.Log, selected = V$Sel[[i]]$Trans.Log)
-updateCheckboxGroupInput(session, "Trans.Std", choices = choices$Trans.Std, selected = V$Sel[[i]]$Trans.Std)
+updateCheckboxGroupInput(session, "Trans.Log", inline = TRUE, choices = choices$Trans.Log, selected = V$Sel[[i]]$Trans.Log)
+updateCheckboxGroupInput(session, "Trans.Std", inline = TRUE, choices = choices$Trans.Std, selected = V$Sel[[i]]$Trans.Std)
 updateCheckboxGroupInput(session, "Fit.Models", choices = choices$Fit.Models, selected = V$Sel[[i]]$Fit.Models)
 updateCheckboxGroupInput(session, "Models", NULL, inline = TRUE, choices = choices$Models, selected = V$Sel[[i]]$Models)
 

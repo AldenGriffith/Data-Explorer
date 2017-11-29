@@ -91,6 +91,9 @@ shinyUI(
                                              
                                          ),
                                          
+                                         
+                                         
+                                         
                                          fluidRow(
                                              column(width = 6,
                                                     selectInput("Group_dy", label = ("Select grouping variable"), 
@@ -107,8 +110,34 @@ shinyUI(
                                          ),
                                          
                                          shinyjs::hidden(div(id = "SubSel_dy", selectInput("SubSel_dy", "Subsetting groups", choices = choices$SubSel_dy,
-                                                                                           selected = sels$SubSel_dy, multiple=TRUE)))
+                                                                                           selected = sels$SubSel_dy, multiple=TRUE))),
                                          
+                                         checkboxInput("Show.Trans", "Show Transformation Options", value = FALSE),
+                                         
+                                         
+                                         shinyjs::hidden(div(id = "div.Transform",
+                                                             fluidRow(
+                                                                 column(width = 4,
+                                                                        checkboxGroupInput("Trans.Log", "Log", inline = TRUE,
+                                                                                           choices = choices$Trans.Log, selected = sels$Trans.Log)
+                                                                        
+                                                                 ),
+                                                                 
+                                                                 column(width = 4,
+                                                                        # checkboxGroupInput("Trans.Log10", "log10", inline = TRUE,
+                                                                        #                    choices = c("X","Y"), selected = NULL)
+                                                                        radioButtons("Log.Base", "Base", inline = TRUE,
+                                                                                     choices = c("e", "10"), selected = "e")
+                                                                        
+                                                                 ),
+                                                                 
+                                                                 column(width = 4,
+                                                                        checkboxGroupInput("Trans.Std", "Standardize", inline = TRUE,
+                                                                                           choices = choices$Trans.Std, selected = sels$Trans.Std)
+                                                                 )
+                                                                 
+                                                             )
+                                         ))
                                          
                                          
                                 ),

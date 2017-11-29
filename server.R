@@ -203,12 +203,36 @@ shinyServer(function(input, output, session) {
         if (input$X_dy != "(none)"){
             if (!is.element(input$X_dy,V$Choices[[V$Current]]$Group_dy)){
                 updateSelectInput(session, "X_dy", label = "X variable (continuous)")
+                updateCheckboxInput(session, "ANOVA", value = FALSE)
                 # shinyjs::hide("div.CatOptions")
                 # shinyjs::show("div.ScatterOptions")
                 # shinyjs::show("div.Models")
                 
             } else {
                 updateSelectInput(session, "X_dy", label = "X variable (categorical)")
+                updateCheckboxGroupInput(session, "Models", NULL, inline = TRUE,
+                                   choices = choices$Models,
+                                   selected = NULL)
+                
+                # updateCheckboxGroupInput(session, "Fit.Linear", selected = NULL)
+                
+                updateCheckboxGroupInput(session, "Fit.Linear", choices = c("Show results"),
+                                         selected = NULL)
+                V$Group.Fit.Linear[[V$Current]] <- FALSE
+
+                updateCheckboxGroupInput(session, "Fit.Quadratic", choices = c("Show results"),
+                                         selected = NULL)
+                V$Group.Fit.Quadratic[[V$Current]] <- FALSE
+
+                updateCheckboxGroupInput(session, "Fit.Power", choices = c("Show results"),
+                                         selected = NULL)
+                V$Group.Fit.Power[[V$Current]] <- FALSE
+
+                updateCheckboxGroupInput(session, "Fit.Custom", choices = c("Show results"),
+                                         selected = NULL)
+                V$Group.Fit.Custom[[V$Current]] <- FALSE
+                
+                
                 # shinyjs::hide("div.ScatterOptions")
                 # shinyjs::hide("div.Models")
                 # shinyjs::show("div.CatOptions")
@@ -354,6 +378,20 @@ shinyServer(function(input, output, session) {
     })
     
     
+    # # # Observe transformation options
+    observe({
+        
+        if(input$Show.Trans){
+            
+            shinyjs::show("div.Transform")
+            
+        } else {
+            
+            shinyjs::hide("div.Transform")
+        }
+        
+    })
+    
     
     # # # Observe grouping variable and update symbol/line options
     observe({
@@ -430,7 +468,7 @@ shinyServer(function(input, output, session) {
                     
                     
                     #Update model fit options
-                    if (!V$Group.Fit.Linear[[V$Current]]){  #if this isn't there you can end up with rapid switch back and forth - can't stop!
+                    if (!V$Group.Fit.Linear[[V$Current]] & !is.element(input$X_dy,V$Choices[[V$Current]]$Group_dy)){  #if this isn't there you can end up with rapid switch back and forth - can't stop!
                         current.fit.lin <- input$Fit.Linear
                         updateCheckboxGroupInput(session, "Fit.Linear", choices = c("Fit by group", "Show results"),
                                                  selected = current.fit.lin)
@@ -439,7 +477,7 @@ shinyServer(function(input, output, session) {
                     }
                     
                     
-                    if (!V$Group.Fit.Quadratic[[V$Current]]){ 
+                    if (!V$Group.Fit.Quadratic[[V$Current]] & !is.element(input$X_dy,V$Choices[[V$Current]]$Group_dy)){ 
                         current.fit.qua <- input$Fit.Quadratic
                         updateCheckboxGroupInput(session, "Fit.Quadratic", choices = c("Fit by group", "Show results"),
                                                  selected = current.fit.qua)
@@ -447,7 +485,7 @@ shinyServer(function(input, output, session) {
                         
                     }
                     
-                    if (!V$Group.Fit.Power[[V$Current]]){ 
+                    if (!V$Group.Fit.Power[[V$Current]] & !is.element(input$X_dy,V$Choices[[V$Current]]$Group_dy)){ 
                         current.fit.pow <- input$Fit.Power
                         updateCheckboxGroupInput(session, "Fit.Power", choices = c("Fit by group", "Show results"),
                                                  selected = current.fit.pow)
@@ -455,7 +493,7 @@ shinyServer(function(input, output, session) {
                         
                     }
                     
-                    if (!V$Group.Fit.Custom[[V$Current]]){ 
+                    if (!V$Group.Fit.Custom[[V$Current]] & !is.element(input$X_dy,V$Choices[[V$Current]]$Group_dy)){ 
                         current.fit.custom <- input$Fit.Custom
                         updateCheckboxGroupInput(session, "Fit.Custom", choices = c("Fit by group", "Show results"),
                                                  selected = current.fit.custom)
@@ -729,7 +767,14 @@ shinyServer(function(input, output, session) {
             }
             
             #Transformations (X is conditional, below)
-            if (is.element("Y", input$Trans.Log) && min(D[,input$Y_dy], na.rm=TRUE) > 0) D[,input$Y_dy] <- log(D[,input$Y_dy])
+            if (input$Log.Base == "e"){
+                base = exp(1)
+            } else {
+                base = 10
+            }
+            
+            
+            if (is.element("Y", input$Trans.Log) && min(D[,input$Y_dy], na.rm=TRUE) > 0) D[,input$Y_dy] <- log(D[,input$Y_dy], base = base)
             if (is.element("Y", input$Trans.Std)) D[,input$Y_dy] <- scale(D[,input$Y_dy])
             
             
@@ -767,7 +812,7 @@ shinyServer(function(input, output, session) {
             if (is.numeric(D[,input$X_dy])){
                 
                 #Transformation
-                if (is.element("X", input$Trans.Log) && min(D[,input$X_dy], na.rm=TRUE) > 0) D[,input$X_dy] <- log(D[,input$X_dy])
+                if (is.element("X", input$Trans.Log) && min(D[,input$X_dy], na.rm=TRUE) > 0) D[,input$X_dy] <- log(D[,input$X_dy], base = base)
                 if (is.element("X", input$Trans.Std)) D[,input$X_dy] <- scale(D[,input$X_dy])
                 
                 X <- D[,input$X_dy]
@@ -1557,6 +1602,18 @@ shinyServer(function(input, output, session) {
             X <- Data[,input$X_dy]
             Y <- Data[,input$Y_dy]
             
+            #Transformations
+            if (input$Log.Base == "e"){
+                base = exp(1)
+            } else {
+                base = 10
+            }
+            
+            if (is.element("Y", input$Trans.Log) && min(Y, na.rm=TRUE) > 0) Y <- log(Y, base = base)
+            if (is.element("X", input$Trans.Log) && min(X, na.rm=TRUE) > 0) X <- log(X, base = base)
+            if (is.element("Y", input$Trans.Std)) Y <- scale(Y)
+            if (is.element("X", input$Trans.Std)) X <- scale(X)
+            
             D <- data.frame(X = X, Y = Y)
             
             #add in grouping variable
@@ -1572,18 +1629,32 @@ shinyServer(function(input, output, session) {
             
             
             fit <- list()
-            
+          
             if (!Group){
                 
                 fit[[1]] <- lm(Y ~ X, data = D)
-                
+               
+                # r2 <- as.character(round(summary(fit[[1]])$r.squared,2))
+                # r2 <- paste("Model R2 =", r2)
                 # tab <- data.frame(NO.NAME = "Parameter values", a = signif(fit[[1]]$coefficients[1],3), b = signif(fit[[1]]$coefficients[2],3))
-                tab <- data.frame(NO.NAME = "Parameter values",
-                                  a = sprintf("%5.4g", fit[[1]]$coefficients[1]),
-                                  b = sprintf("%5.4g", fit[[1]]$coefficients[2]))
+                # tab <- data.frame(Effect = c(input$X_dy, "Residuals", r2),
+                #                   df = c(as.character(fit.anova$Df), ""),
+                #                   F = c(as.character(sprintf("%5.4g", fit.anova$`F value`[1])), "", ""),
+                #                   P = c(as.character(sprintf("%5.4g", fit.anova$`Pr(>F)`[1])), "", ""))
                 
+                if (anova(fit[[1]])$`Pr(>F)`[1] < 0.001){
+                    P <- "< 0.001"
+                } else {
+                    P <- sprintf("%5.4g", anova(fit[[1]])$`Pr(>F)`[1])
+                }
+               
+                tab <- data.frame(a = sprintf("%5.4g", fit[[1]]$coefficients[1]),
+                                  b = sprintf("%5.4g", fit[[1]]$coefficients[2]),
+                                  R2 = round(summary(fit[[1]])$r.squared,2),
+                                  P = P)
+                # 
                 
-                names(tab)[1] <- ""
+                # names(tab)[1] <- ""
                 
                 
             } else {
@@ -1593,7 +1664,7 @@ shinyServer(function(input, output, session) {
                 # tab <- data.frame(Group = character(n), a = numeric(n), b = numeric(n),
                 #                   stringsAsFactors = FALSE)
                 
-                tab <- data.frame(Group = character(n), a = character(n), b = character(n),
+                tab <- data.frame(Group = character(n), a = character(n), b = character(n), R2 = character(n), P = character(n),
                                   stringsAsFactors = FALSE)
                 
                 for (i in 1:n){
@@ -1606,6 +1677,15 @@ shinyServer(function(input, output, session) {
                     
                     tab$a[i] <- sprintf("%5.4g", fit[[i]]$coefficients[1])
                     tab$b[i] <- sprintf("%5.4g", fit[[i]]$coefficients[2])
+                    
+                    tab$R2[i] <- as.character(round(summary(fit[[i]])$r.squared,2))
+                    
+                    if (anova(fit[[i]])$`Pr(>F)`[1] < 0.001){
+                        tab$P[i] <- "< 0.001"
+                    } else {
+                        tab$P[i] <- sprintf("%5.4g", anova(fit[[i]])$`Pr(>F)`[1])
+                    }
+                   
                     
                     # tab$a[i] <- signif(fit[[i]]$coefficients[1],5)
                     # tab$b[i] <- signif(fit[[i]]$coefficients[2],5)
@@ -1644,6 +1724,18 @@ shinyServer(function(input, output, session) {
             
             X <- Data[,input$X_dy]
             Y <- Data[,input$Y_dy]
+            
+            #Transformations
+            if (input$Log.Base == "e"){
+                base = exp(1)
+            } else {
+                base = 10
+            }
+            
+            if (is.element("Y", input$Trans.Log) && min(Y, na.rm=TRUE) > 0) Y <- log(Y, base = base)
+            if (is.element("X", input$Trans.Log) && min(X, na.rm=TRUE) > 0) X <- log(X, base = base)
+            if (is.element("Y", input$Trans.Std)) Y <- scale(Y)
+            if (is.element("X", input$Trans.Std)) X <- scale(X)
             
             D <- data.frame(X = X, Y = Y)
             
@@ -1731,6 +1823,18 @@ shinyServer(function(input, output, session) {
             X <- Data[,input$X_dy]
             Y <- Data[,input$Y_dy]
             
+            #Transformations
+            if (input$Log.Base == "e"){
+                base = exp(1)
+            } else {
+                base = 10
+            }
+            
+            if (is.element("Y", input$Trans.Log) && min(Y, na.rm=TRUE) > 0) Y <- log(Y, base = base)
+            if (is.element("X", input$Trans.Log) && min(X, na.rm=TRUE) > 0) X <- log(X, base = base)
+            if (is.element("Y", input$Trans.Std)) Y <- scale(Y)
+            if (is.element("X", input$Trans.Std)) X <- scale(X)
+            
             D <- data.frame(X = X, Y = Y)
             
             #add in grouping variable
@@ -1817,6 +1921,18 @@ shinyServer(function(input, output, session) {
             
             x <- Data[,input$X_dy]
             y <- Data[,input$Y_dy]
+            
+            #Transformations
+            if (input$Log.Base == "e"){
+                base = exp(1)
+            } else {
+                base = 10
+            }
+            
+            if (is.element("Y", input$Trans.Log) && min(y, na.rm=TRUE) > 0) y <- log(y, base = base)
+            if (is.element("X", input$Trans.Log) && min(x, na.rm=TRUE) > 0) x <- log(x, base = base)
+            if (is.element("Y", input$Trans.Std)) y <- scale(y)
+            if (is.element("X", input$Trans.Std)) x <- scale(x)
             
             D <- data.frame(x = x, y = y)
             
@@ -1926,6 +2042,19 @@ shinyServer(function(input, output, session) {
             X <- Data[,input$X_dy]
             Y <- Data[,input$Y_dy]
             
+            
+            
+            
+            #Transformations
+            if (input$Log.Base == "e"){
+                base = exp(1)
+            } else {
+                base = 10
+            }
+            
+            if (is.element("Y", input$Trans.Log) && min(Y, na.rm=TRUE) > 0) Y <- log(Y, base = base)
+            if (is.element("Y", input$Trans.Std)) Y <- scale(Y)
+            
             D <- data.frame(X = X, Y = Y)
             
             #add in grouping variable
@@ -1950,12 +2079,20 @@ shinyServer(function(input, output, session) {
                 fit.anova <- anova(fit)
                 
                 r2 <- as.character(round(summary(fit)$r.squared,2))
-                r2 <- paste("R2 =", r2)
+                r2 <- paste("Model R2 =", r2)
+                
+                if (fit.anova$`Pr(>F)`[1] < 0.001){
+                    P <- "< 0.001"
+                } else {
+                    P <- sprintf("%5.4g", fit.anova$`Pr(>F)`[1])
+                }
+                
+                
                 # tab <- data.frame(NO.NAME = "Parameter values", a = signif(fit[[1]]$coefficients[1],3), b = signif(fit[[1]]$coefficients[2],3))
                 tab <- data.frame(Effect = c(input$X_dy, "Residuals", r2),
                                   df = c(as.character(fit.anova$Df), ""),
-                                  F = c(as.character((sprintf("%5.4g", fit.anova$`F value`[1]))), "", ""),
-                                  P = c(as.character((sprintf("%5.4g", fit.anova$`Pr(>F)`[1]))), "", ""))
+                                  F = c(as.character(sprintf("%5.4g", fit.anova$`F value`[1])), "", ""),
+                                  P = c(as.character(P), "", ""))
                 
                 
                 # 
@@ -1968,13 +2105,21 @@ shinyServer(function(input, output, session) {
                 fit <- lm(Y ~ X*Group, data = D)
                 fit.anova <- anova(fit)
                 
+                r2 <- as.character(round(summary(fit)$r.squared,2))
+                r2 <- paste("Model R2 =", r2)
+                
+               P <- sprintf("%5.4g", fit.anova$`Pr(>F)`)
+               low.P <- which(fit.anova$`Pr(>F)` < 0.001)
+               if (length(low.P) > 0) P[low.P] <- "< 0.001"
+               
                 tab <- data.frame(Effect = c(input$X_dy, input$Group_dy,
                                              paste(input$X_dy, input$Group_dy, sep=" * "),
-                                             "Residuals"),
-                                  df = fit.anova$Df,
-                                  F = as.character(c(sprintf("%5.4g", fit.anova$`F value`[1:3]), "")),
-                                  P = as.character(c(sprintf("%5.4g", fit.anova$`Pr(>F)`[1:3]), "")))
-                
+                                             "Residuals", r2),
+                                  df = c(fit.anova$Df, ""),
+                                  F = c(as.character(sprintf("%5.4g", fit.anova$`F value`[1:3])), "",""),
+                                  P = c(as.character(P[1:3]), "",""))
+                                  # P = c(as.character(sprintf("%5.4g", fit.anova$`Pr(>F)`[1:3])), "",""))
+
                 
                 # 
                 names(tab)[1] <- ""
