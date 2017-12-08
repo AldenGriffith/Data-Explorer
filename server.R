@@ -2022,7 +2022,7 @@ shinyServer(function(input, output, session) {
     })
     
     
-    #Linear model output
+    #ANOVA output
     output$ANOVA.Table <- renderTable({
         
         
@@ -2058,7 +2058,7 @@ shinyServer(function(input, output, session) {
             D <- data.frame(X = X, Y = Y)
             
             #add in grouping variable
-            if (input$Group_dy != "(none)") {
+            if (input$Group_dy != "(none)" && input$Group_dy != input$X_dy) {
                 Group <- TRUE
                 D$Group <- Data[,input$Group_dy]
                 D <- D[complete.cases(D$X, D$Y, D$Group),]
