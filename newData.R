@@ -46,6 +46,7 @@ V$Group.Sym.Color[[i]] <- FALSE
 V$Group.Line.Color[[i]] <- FALSE
 V$Group.Cat.Color[[i]] <- FALSE
 V$Group.Fit.Linear[[i]] <- FALSE
+V$Group.Color.Linear[[i]] <- FALSE
 V$Group.Fit.Quadratic[[i]] <- FALSE
 V$Group.Fit.Power[[i]] <- FALSE
 V$Group.Fit.Custom[[i]] <- FALSE

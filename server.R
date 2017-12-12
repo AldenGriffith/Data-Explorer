@@ -36,6 +36,7 @@ shinyServer(function(input, output, session) {
         Group.Line.Color = list(),
         Group.Cat.Color = list(),
         Group.Fit.Linear = list(),
+        Group.Color.Linear = list(),
         Group.Fit.Quadratic = list(),
         Group.Fit.Power = list(),
         Group.Fit.Custom = list(),
@@ -214,8 +215,8 @@ shinyServer(function(input, output, session) {
                                    choices = choices$Models,
                                    selected = NULL)
                 
-                # updateCheckboxGroupInput(session, "Fit.Linear", selected = NULL)
-                
+    
+                #Resets continuous model choices
                 updateCheckboxGroupInput(session, "Fit.Linear", choices = c("Show results"),
                                          selected = NULL)
                 V$Group.Fit.Linear[[V$Current]] <- FALSE
@@ -470,7 +471,7 @@ shinyServer(function(input, output, session) {
                     #Update model fit options
                     if (!V$Group.Fit.Linear[[V$Current]] & !is.element(input$X_dy,V$Choices[[V$Current]]$Group_dy)){  #if this isn't there you can end up with rapid switch back and forth - can't stop!
                         current.fit.lin <- input$Fit.Linear
-                        updateCheckboxGroupInput(session, "Fit.Linear", choices = c("Fit by group", "Show results"),
+                        updateCheckboxGroupInput(session, "Fit.Linear", choices = c("Fit by group", "Color by group", "Show results"),
                                                  selected = current.fit.lin)
                         V$Group.Fit.Linear[[V$Current]] <- TRUE
                         
@@ -594,6 +595,27 @@ shinyServer(function(input, output, session) {
     })
     
     # debounce(group.obs, 1000)
+    
+    
+    
+    #Need to obseve fit by group - could maybe go up in V$ON observer above?
+    observe({
+        
+        #when user selects fit by group, should auto update group color
+        if(V$ON){
+            #Update model fit options
+            if (!V$Group.Fit.Linear[[V$Current]] && any(grepl("Fit by group", input$Fit.Linear))){  #if this isn't there you can end up with rapid switch back and forth - can't stop!
+                current.fit.lin <- input$Fit.Linear
+                message(current.fit.lin)
+                updateCheckboxGroupInput(session, "Fit.Linear", choices = c("Fit by group", "Color by group", "Show results"),
+                                         selected = c(current.fit.lin, "Color by group"))
+                V$Group.Fit.Linear[[V$Current]] <- TRUE
+                
+            }
+        }
+        
+    })
+    
     
     
     observeEvent(input$Do.Custom,{

@@ -528,8 +528,30 @@ shinyUI(
                                                                                             
                                                                                      ),
                                                                                      column(width = 6,
+                                                                                            
+                                                                                            
+                                                                                            
+                                                                                            div(id = "Linear.Color.Single",
                                                                                             colourInput("Color.Linear", "Color", value = "black",
-                                                                                                        palette = "limited", showColour = "background")
+                                                                                                        palette = "limited", showColour = "background")),
+
+                                                                                            
+                                                                                            # 
+                                                                                            # div(id = "Sym.Color.Single",
+                                                                                            #     colourInput("Sym.Color", "Symbol color", value = sels$Sym.Color,
+                                                                                            #                 palette = "limited", showColour = "background")),
+                                                                                            
+                                                                                            # shinyjs::hidden(div(id = "Sym.Color.Group",
+                                                                                            #                     selectInput("Sym.Color.Theme", "Group color theme",
+                                                                                            #                                 choices = choices$Sym.Color.Theme,
+                                                                                            #                                 selected = sels$Sym.Color.Theme)))
+                                                                                            
+                                                                                            shinyjs::hidden(div(id = "Linear.Color.Group",
+                                                                                                                h5("(Line color by group)")))
+                                                                                            
+                                                                                            
+                                                                                            
+                                                                                            
                                                                                      )
                                                                                  ),
                                                                                  
