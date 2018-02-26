@@ -920,6 +920,7 @@ shinyUI(
                                      h5("Please send any comments / errors to agriffit@wellesley.edu"),
                                      br(),
                                      h5("New in this update:"),
+                                     h5("- Can display jittered points on top of boxplots and violin plots"),
                                      h5("- Can now color model fits by group"),
                                      h5("- Quadratic model fit replaced by more general polynomial model (order 1-5)"),
                                      h5("- Fixed a issue when adding a custom legend title"),
