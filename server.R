@@ -190,25 +190,33 @@ shinyServer(function(input, output, session) {
     
     observe({
         
-        #Y variable
+        #Y variable is selected
         if (input$Y_dy != "(none)"){
             if (!is.element(input$Y_dy,V$Choices[[V$Current]]$Group_dy)){
                 updateSelectInput(session, "Y_dy", label = "Y variable (continuous)")
             }
         } else {
+            #No Y variable selected
             updateSelectInput(session, "Y_dy", label = "Y variable")
         }
         
-        #X variable
+        #X variable is selected
         if (input$X_dy != "(none)"){
+            
+            #X continuous?
             if (!is.element(input$X_dy,V$Choices[[V$Current]]$Group_dy)){
+                
+                #X is continuous, so reset ANOVA options (will be hidden)
                 updateSelectInput(session, "X_dy", label = "X variable (continuous)")
                 updateCheckboxInput(session, "ANOVA", value = FALSE)
                 # shinyjs::hide("div.CatOptions")
                 # shinyjs::show("div.ScatterOptions")
                 # shinyjs::show("div.Models")
                 
+                #X categorical?
             } else {
+                
+                #X is categoreical, so reset continuous model options (will be hidden)
                 updateSelectInput(session, "X_dy", label = "X variable (categorical)")
                 updateCheckboxGroupInput(session, "Models", NULL, inline = TRUE,
                                    choices = choices$Models,
@@ -240,10 +248,11 @@ shinyServer(function(input, output, session) {
             }
             
         } else {
+            #No X variable selected
             updateSelectInput(session, "X_dy", label = "X variable")
         }
         
-        #Axes inputs
+        #BOTH X and Y selected
         if (input$X_dy != "(none)" && input$Y_dy != "(none)"){
             
             shinyjs::show("div.FigHead")
@@ -374,6 +383,54 @@ shinyServer(function(input, output, session) {
             
         }
         
+        #Linear Model
+        if (any(grepl("Color by group", input$Fit.Linear))){
+            
+            shinyjs::disable("div.Color.Linear")
+            # shinyjs::show("Line.Color.Group")
+            
+        } else {
+            
+            shinyjs::enable("div.Color.Linear")
+            # shinyjs::hide("Line.Color.Group")
+        }
+        
+        #Polynomial Model
+        if (any(grepl("Color by group", input$Fit.Quadratic))){
+            
+            shinyjs::disable("div.Color.Quadratic")
+            # shinyjs::show("Line.Color.Group")
+            
+        } else {
+            
+            shinyjs::enable("div.Color.Quadratic")
+            # shinyjs::hide("Line.Color.Group")
+        }
+        
+        #Power Model
+        if (any(grepl("Color by group", input$Fit.Power))){
+            
+            shinyjs::disable("div.Color.Power")
+            # shinyjs::show("Line.Color.Group")
+            
+        } else {
+            
+            shinyjs::enable("div.Color.Power")
+            # shinyjs::hide("Line.Color.Group")
+        }
+        
+        #Power Model
+        if (any(grepl("Color by group", input$Fit.Custom))){
+            
+            shinyjs::disable("div.Color.Custom")
+            # shinyjs::show("Line.Color.Group")
+            
+        } else {
+            
+            shinyjs::enable("div.Color.Custom")
+            # shinyjs::hide("Line.Color.Group")
+        }
+        
         
     })
     
@@ -470,7 +527,7 @@ shinyServer(function(input, output, session) {
                     #Update model fit options
                     if (!V$Group.Fit.Linear[[V$Current]] & !is.element(input$X_dy,V$Choices[[V$Current]]$Group_dy)){  #if this isn't there you can end up with rapid switch back and forth - can't stop!
                         current.fit.lin <- input$Fit.Linear
-                        updateCheckboxGroupInput(session, "Fit.Linear", choices = c("Fit by group", "Show results"),
+                        updateCheckboxGroupInput(session, "Fit.Linear", choices = c("Show results", "Fit by group", "Color by group"),
                                                  selected = current.fit.lin)
                         V$Group.Fit.Linear[[V$Current]] <- TRUE
                         
@@ -479,7 +536,7 @@ shinyServer(function(input, output, session) {
                     
                     if (!V$Group.Fit.Quadratic[[V$Current]] & !is.element(input$X_dy,V$Choices[[V$Current]]$Group_dy)){ 
                         current.fit.qua <- input$Fit.Quadratic
-                        updateCheckboxGroupInput(session, "Fit.Quadratic", choices = c("Fit by group", "Show results"),
+                        updateCheckboxGroupInput(session, "Fit.Quadratic", choices = c("Show results", "Fit by group", "Color by group"),
                                                  selected = current.fit.qua)
                         V$Group.Fit.Quadratic[[V$Current]] <- TRUE
                         
@@ -487,7 +544,7 @@ shinyServer(function(input, output, session) {
                     
                     if (!V$Group.Fit.Power[[V$Current]] & !is.element(input$X_dy,V$Choices[[V$Current]]$Group_dy)){ 
                         current.fit.pow <- input$Fit.Power
-                        updateCheckboxGroupInput(session, "Fit.Power", choices = c("Fit by group", "Show results"),
+                        updateCheckboxGroupInput(session, "Fit.Power", choices = c("Show results", "Fit by group", "Color by group"),
                                                  selected = current.fit.pow)
                         V$Group.Fit.Power[[V$Current]] <- TRUE
                         
@@ -495,7 +552,7 @@ shinyServer(function(input, output, session) {
                     
                     if (!V$Group.Fit.Custom[[V$Current]] & !is.element(input$X_dy,V$Choices[[V$Current]]$Group_dy)){ 
                         current.fit.custom <- input$Fit.Custom
-                        updateCheckboxGroupInput(session, "Fit.Custom", choices = c("Fit by group", "Show results"),
+                        updateCheckboxGroupInput(session, "Fit.Custom", choices = c("Show results", "Fit by group", "Color by group"),
                                                  selected = current.fit.custom)
                         V$Group.Fit.Custom[[V$Current]] <- TRUE
                         
@@ -604,16 +661,30 @@ shinyServer(function(input, output, session) {
     })
     
     
-    # # # Observe if bar plot
+    # # # Observe if cat plot type
     observe({
         
         if (input$CatType == "Bar plot"){
             
+            shinyjs::hide("div.CatPoints")
+            shinyjs::hide("div.CatPoints.Size")
             shinyjs::show("div.Error")
+            shinyjs::show("div.Error.Cap")
+            
+        } else if (input$CatType == "Box plot" | input$CatType == "Violin plot" ){
+            
+            shinyjs::hide("div.Error")
+            shinyjs::hide("div.Error.Cap")
+            shinyjs::show("div.CatPoints")
+            shinyjs::show("div.CatPoints.Size")
             
         } else {
             
+            shinyjs::hide("div.CatPoints")
+            shinyjs::hide("div.CatPoints.Size")
             shinyjs::hide("div.Error")
+            shinyjs::hide("div.Error.Cap")
+            
         }
         
     })
@@ -784,6 +855,8 @@ shinyServer(function(input, output, session) {
             
             #Factor grouping variable
             if (Group != "(none)"){
+                
+                # D <- D[complete.cases(D[,Group]),] #get rid of any empty levels?  or maybe leave there to show?
                 D[,Group] <- factor(D[,Group])
             }
             
@@ -953,11 +1026,23 @@ shinyServer(function(input, output, session) {
                 # if (any(grepl("model", input$Fit.Linear))) {
                 if (any(grepl("Linear", input$Models))) {
                     
-                    if (any(grepl("group", input$Fit.Linear)) && input$Group_dy != "(none)"){
+                    if (any(grepl("Fit by group", input$Fit.Linear)) && input$Group_dy != "(none)"){
+                        #Grouping var
                         
-                        gg_fit_linear <- geom_smooth(aes_string(group = Group), method = 'lm', formula = y~x, se=FALSE, color = input$Color.Linear,
-                                                     linetype = gsub(" ","",tolower(input$Type.Linear)),
-                                                     size = input$Size.Linear)
+                        
+                        if (any(grepl("Color by group", input$Fit.Linear))) {
+                            
+                            gg_fit_linear <- geom_smooth(aes_string(color = Group), method = 'lm', formula = y~x, se=FALSE,
+                                                         linetype = gsub(" ","",tolower(input$Type.Linear)),
+                                                         size = input$Size.Linear)
+                            
+                        } else {
+                            
+                            gg_fit_linear <- geom_smooth(aes_string(group = Group), method = 'lm', formula = y~x, se=FALSE, color = input$Color.Linear,
+                                                         linetype = gsub(" ","",tolower(input$Type.Linear)),
+                                                         size = input$Size.Linear)
+                        }
+                        
                         
                     } else {
                     
@@ -971,19 +1056,29 @@ shinyServer(function(input, output, session) {
                 }
                 
                 #Quadratic model
-                if (any(grepl("Quadratic", input$Models))) {
+                if (any(grepl("Polynomial", input$Models))) {
                     
                     if (any(grepl("group", input$Fit.Quadratic)) && input$Group_dy != "(none)"){
                         
-                        gg_fit_quadratic <- geom_smooth(aes_string(group = Group), method = 'lm', formula = y ~ x + I(x^2), se=FALSE, color = input$Color.Quadratic,
+                        
+                        if (any(grepl("Color by group", input$Fit.Quadratic))) {
+                        
+                            gg_fit_quadratic <- geom_smooth(aes_string(color = Group), method = 'lm', formula = y ~ poly(x, as.numeric(input$Poly.Order)), se=FALSE,
+                                                            linetype = gsub(" ","",tolower(input$Type.Quadratic)),
+                                                            size = input$Size.Quadratic)
+                            
+                        } else {
+                            
+                            gg_fit_quadratic <- geom_smooth(aes_string(group = Group), method = 'lm', formula = y ~ poly(x, as.numeric(input$Poly.Order)), se=FALSE, color = input$Color.Quadratic,
                                                      linetype = gsub(" ","",tolower(input$Type.Quadratic)),
                                                      size = input$Size.Quadratic)
+                        }
                         
                     } else {
                         
-                        gg_fit_quadratic <- geom_smooth(method = 'lm', formula = y ~ x + I(x^2), se=FALSE, color = input$Color.Quadratic,
-                                                     linetype = gsub(" ","",tolower(input$Type.Quadratic)),
-                                                     size = input$Size.Quadratic)
+                        gg_fit_quadratic <- geom_smooth(method = 'lm', formula = y ~ poly(x, as.numeric(input$Poly.Order)), se=FALSE, color = input$Color.Quadratic,
+                                                        linetype = gsub(" ","",tolower(input$Type.Quadratic)),
+                                                        size = input$Size.Quadratic)
                     }
                     
                 } else {
@@ -996,10 +1091,23 @@ shinyServer(function(input, output, session) {
                     
                     if (any(grepl("group", input$Fit.Power)) && input$Group_dy != "(none)"){
                         
-                        gg_fit_power <- geom_smooth(aes_string(group = Group), method = 'nlsLM', formula = y~a*x^b, method.args = list(start = list(a = 1, b=1)),
-                                                    se=FALSE, color = input$Color.Power,
-                                                    linetype = gsub(" ","",tolower(input$Type.Power)),
-                                                    size = input$Size.Power)
+                        
+                        if (any(grepl("Color by group", input$Fit.Power))) {
+                            
+                            gg_fit_power <- geom_smooth(aes_string(color = Group), method = 'nlsLM', formula = y~a*x^b, method.args = list(start = list(a = 1, b=1)),
+                                                        se=FALSE, linetype = gsub(" ","",tolower(input$Type.Power)),
+                                                        size = input$Size.Power)
+                            
+                        } else {
+                            
+                            gg_fit_power <- geom_smooth(aes_string(group = Group), method = 'nlsLM', formula = y~a*x^b, method.args = list(start = list(a = 1, b=1)),
+                                                        se=FALSE, color = input$Color.Power,
+                                                        linetype = gsub(" ","",tolower(input$Type.Power)),
+                                                        size = input$Size.Power)
+                        }
+                        
+                        
+                        
                         
                     } else {
                         
@@ -1030,10 +1138,22 @@ shinyServer(function(input, output, session) {
                     
                     if (any(grepl("group", input$Fit.Custom)) && input$Group_dy != "(none)"){
 
-                        gg_fit_custom <- geom_smooth(aes_string(group = Group), method = 'nlsLM', formula = form, method.args = list(start = params),
-                                                    se=FALSE, color = input$Color.Custom,
-                                                    linetype = gsub(" ","",tolower(input$Type.Custom)),
-                                                    size = input$Size.Custom)
+                       
+                        
+                        if (any(grepl("Color by group", input$Fit.Custom))) {
+                            
+                            gg_fit_custom <- geom_smooth(aes_string(color = Group), method = 'nlsLM', formula = form, method.args = list(start = params),
+                                                         se=FALSE, linetype = gsub(" ","",tolower(input$Type.Custom)),
+                                                         size = input$Size.Custom)
+                            
+                        } else {
+                            
+                            gg_fit_custom <- geom_smooth(aes_string(group = Group), method = 'nlsLM', formula = form, method.args = list(start = params),
+                                                         se=FALSE, color = input$Color.Custom,
+                                                         linetype = gsub(" ","",tolower(input$Type.Custom)),
+                                                         size = input$Size.Custom)
+                        }
+                        
 
                     } else {
 
@@ -1116,6 +1236,7 @@ shinyServer(function(input, output, session) {
                 #start ggplot object
                 fig <- ggplot(D, aes_string(x = input$X_dy, y = input$Y_dy))
                 
+                jitter.w <- 0.3 #jitter width
                 
                 #1a - no grouping variable
                 if (Group == "(none)"){
@@ -1124,16 +1245,42 @@ shinyServer(function(input, output, session) {
                     if (input$CatType == "Bar plot"){
                         gg_cat <- geom_bar(width = Spacing.X, stat = "summary", fun.y = mean, color = input$Edge.Color, fill = input$Fill.Color, size = input$Cat.Edge)
                         gg_error <- stat_summary(geom = "errorbar", position = "dodge", fun.data = fun.error, width = input$Error.Cap/100, size = input$Cat.Edge)
+                        gg_points <- NULL
                     }
                     
+                    if (input$CatPoints && input$CatType != "Bar plot"){
+                        gg_points <- geom_jitter(width = jitter.w*Spacing.X, height = 0, color = input$Edge.Color, size = input$CatPoints.Size)
+                        outlier.colour <- NA
+                    } else {
+                        gg_points <- NULL
+                        outlier.colour <- NULL
+                    }
+                    
+                    
+                    
                     if (input$CatType == "Box plot"){
-                        gg_cat <- geom_boxplot(width = Spacing.X, color = input$Edge.Color, fill = input$Fill.Color, size = input$Cat.Edge)
+                       
+                        gg_cat <- geom_boxplot(width = Spacing.X, color = input$Edge.Color, fill = input$Fill.Color, size = input$Cat.Edge, outlier.colour = outlier.colour)
                         gg_error <- NULL
+                        
+                        # if (input$CatPoints){
+                        #     gg_cat <- geom_boxplot(width = Spacing.X, color = input$Edge.Color, fill = input$Fill.Color, size = input$Cat.Edge, outlier.colour=NA)
+                        #     gg_error <- NULL
+                        #     gg_points <- geom_jitter(width = jitter.w*Spacing.X, height = 0, color = input$Edge.Color, size = input$CatPoints.Size)
+                        #     message(Spacing.X)
+                        #     # gg_points <- geom_point(color = input$Edge.Color, size = input$CatPoints.Size, width = Spacing.X)
+                        #     # gg_points <- geom_point(position=position_jitterdodge())
+                        # } else {
+                        #     gg_cat <- geom_boxplot(width = Spacing.X, color = input$Edge.Color, fill = input$Fill.Color, size = input$Cat.Edge)
+                        #     gg_error <- NULL
+                        #     gg_points <- NULL
+                        # }
                     }
                     
                     if (input$CatType == "Violin plot"){
                         gg_cat <- geom_violin(width = Spacing.X, color = input$Edge.Color, fill = input$Fill.Color, draw_quantiles = c(.5), size = input$Cat.Edge)
                         gg_error <- NULL
+                        # gg_points <- NULL
                     }
                     
                     
@@ -1167,16 +1314,42 @@ shinyServer(function(input, output, session) {
                             if (input$CatType == "Bar plot"){
                                 gg_cat <- geom_bar(aes_string(fill = Group, color = Group), width = Spacing.X, position = position_dodge(Spacing.Group), stat = "summary", fun.y = mean, size = input$Cat.Edge)
                                 gg_error <- stat_summary(geom = "errorbar", aes_string(group = Group, color = Group), position = position_dodge(Spacing.Group), fun.data = fun.error, width = input$Error.Cap/100, size = input$Cat.Edge)
+                                gg_points <- NULL
+                            }
+                            
+                            if (input$CatPoints && input$CatType != "Bar plot"){
+                                gg_points <- geom_point(aes_string(color = Group), size = input$CatPoints.Size, position = position_jitterdodge(dodge.width = Spacing.Group, jitter.width = jitter.w*Spacing.X*1.5, jitter.height = 0))
+                                outlier.colour <- NA
+                            } else {
+                                gg_points <- NULL
+                                outlier.colour <- NULL
                             }
                             
                             if (input$CatType == "Box plot"){
-                                gg_cat <- geom_boxplot(aes_string(fill = Group, color = Group), width = Spacing.X, position = position_dodge(Spacing.Group), size = input$Cat.Edge)
+                                gg_cat <- geom_boxplot(aes_string(fill = Group, color = Group), width = Spacing.X, position = position_dodge(Spacing.Group), size = input$Cat.Edge, outlier.colour = outlier.colour)
                                 gg_error <- NULL
+                                
+                                # #Old way
+                                # if (input$CatPoints){
+                                #     # gg_cat <- geom_boxplot(width = Spacing.X, color = input$Edge.Color, fill = input$Fill.Color, size = input$Cat.Edge, outlier.colour=NA)
+                                #     gg_cat <- geom_boxplot(aes_string(fill = Group, color = Group), width = Spacing.X, position = position_dodge(Spacing.Group), size = input$Cat.Edge, outlier.colour = NA)
+                                #     gg_error <- NULL
+                                #     # gg_points <- geom_jitter(aes_string(group = Group), width = jitter.w, height = 0)
+                                #     # gg_points <- geom_point(aes_string(group = Group, color = Group), position = position_jitter(w = 0.25, h = 0))
+                                #     gg_points <- geom_point(aes_string(color = Group), size = input$CatPoints.Size, position = position_jitterdodge(dodge.width = Spacing.Group, jitter.width = jitter.w*Spacing.X, jitter.height = 0))
+                                # } else {
+                                #     gg_cat <- geom_boxplot(aes_string(fill = Group, color = Group), width = Spacing.X, position = position_dodge(Spacing.Group), size = input$Cat.Edge)
+                                #     gg_error <- NULL
+                                #     gg_points <- NULL
+                                # }
+                                
+                                
                             }
                             
                             if (input$CatType == "Violin plot"){
                                 gg_cat <- geom_violin(aes_string(fill = Group, color = Group), width = Spacing.X, position = position_dodge(Spacing.Group), draw_quantiles = c(.5), size = input$Cat.Edge)
                                 gg_error <- NULL
+                                # gg_points <- NULL
                             }  
                             
                             #3b - edge color not grouped
@@ -1186,17 +1359,42 @@ shinyServer(function(input, output, session) {
                             if (input$CatType == "Bar plot"){
                                 gg_cat <- geom_bar(aes_string(fill = Group), color = input$Edge.Color, width = Spacing.X, position = position_dodge(Spacing.Group), stat = "summary", fun.y = mean, size = input$Cat.Edge)
                                 gg_error <- stat_summary(geom = "errorbar", aes_string(group = Group), color = input$Edge.Color, position = position_dodge(Spacing.Group), fun.data = fun.error, width = input$Error.Cap/100, size = input$Cat.Edge)
+                                # gg_points <- NULL
+                            }
+                            
+                            
+                            if (input$CatPoints && input$CatType != "Bar plot"){
+                                gg_points <- geom_point(aes_string(fill = Group), color = input$Edge.Color, size = input$CatPoints.Size, position = position_jitterdodge(dodge.width = Spacing.Group, jitter.width = jitter.w*Spacing.X*1.5, jitter.height = 0))
+                                outlier.colour <- NA
+                            } else {
+                                gg_points <- NULL
+                                outlier.colour <- NULL
                             }
                             
                             if (input$CatType == "Box plot"){
-                                gg_cat <- geom_boxplot(aes_string(fill = Group), color = input$Edge.Color, width = Spacing.X, position = position_dodge(Spacing.Group), size = input$Cat.Edge)
+                                gg_cat <- geom_boxplot(aes_string(fill = Group), color = input$Edge.Color, width = Spacing.X, position = position_dodge(Spacing.Group), size = input$Cat.Edge, outlier.colour = outlier.colour)
                                 gg_error <- NULL
+                                
+                                # #old way of adding points to plots
+                                # if (input$CatPoints){
+                                #     gg_cat <- geom_boxplot(aes_string(fill = Group), color = input$Edge.Color, width = Spacing.X, position = position_dodge(Spacing.Group), size = input$Cat.Edge, outlier.colour = NA)
+                                #     gg_error <- NULL
+                                #     # gg_points <- geom_jitter(color = input$Edge.Color, width = jitter.w, height = 0)
+                                #     gg_points <- geom_point(aes_string(fill = Group), color = input$Edge.Color, size = input$CatPoints.Size, position = position_jitterdodge(dodge.width = Spacing.Group, jitter.width = jitter.w*Spacing.X*1.5, jitter.height = 0))
+                                #     message(c(Spacing.X, Spacing.Group))
+                                # } else {
+                                #     gg_cat <- geom_boxplot(aes_string(fill = Group), color = input$Edge.Color, width = Spacing.X, position = position_dodge(Spacing.Group), size = input$Cat.Edge)
+                                #     gg_error <- NULL
+                                #     # gg_points <- NULL
+                                # }
+                                
                             }
                             
                             if (input$CatType == "Violin plot"){
                                 gg_cat <- geom_violin(aes_string(fill = Group), color = input$Edge.Color, width = Spacing.X, position = position_dodge(Spacing.Group), draw_quantiles = c(.5), size = input$Cat.Edge)
                                 gg_error <- NULL
-                            }  
+                                # gg_points <- NULL
+                            } 
                             
                         }
                         
@@ -1212,16 +1410,39 @@ shinyServer(function(input, output, session) {
                             if (input$CatType == "Bar plot"){
                                 gg_cat <- geom_bar(aes_string(color = Group), fill = input$Fill.Color, width = Spacing.X, position = position_dodge(Spacing.Group), stat = "summary", fun.y = mean, size = input$Cat.Edge)
                                 gg_error <- stat_summary(geom = "errorbar", aes_string(group = Group, color = Group), position = position_dodge(Spacing.Group), fun.data = fun.error, width = input$Error.Cap/100, size = input$Cat.Edge)
+                                gg_points <- NULL
+                            }
+                            
+                            
+                            if (input$CatPoints && input$CatType != "Bar plot"){
+                                gg_points <- geom_point(aes_string(color = Group), size = input$CatPoints.Size, position = position_jitterdodge(dodge.width = Spacing.Group, jitter.width = jitter.w*Spacing.X*1.5, jitter.height = 0))
+                                outlier.colour <- NA
+                            } else {
+                                gg_points <- NULL
+                                outlier.colour <- NULL
                             }
                             
                             if (input$CatType == "Box plot"){
-                                gg_cat <- geom_boxplot(aes_string(color = Group), fill = input$Fill.Color, width = Spacing.X, position = position_dodge(Spacing.Group), size = input$Cat.Edge)
+                                gg_cat <- geom_boxplot(aes_string(color = Group), fill = input$Fill.Color, width = Spacing.X, position = position_dodge(Spacing.Group), size = input$Cat.Edge, outlier.colour = outlier.colour)
                                 gg_error <- NULL
+                                
+                                # if (input$CatPoints){
+                                #     gg_cat <- geom_boxplot(aes_string(color = Group), fill = input$Fill.Color, width = Spacing.X, position = position_dodge(Spacing.Group), size = input$Cat.Edge, outlier.colour = NA)
+                                #     gg_error <- NULL
+                                #     # gg_points <- geom_jitter(aes_string(color = Group), width = jitter.w, height = 0)
+                                #     gg_points <- geom_point(aes_string(color = Group), size = input$CatPoints.Size, position = position_jitterdodge(dodge.width = Spacing.Group, jitter.width = jitter.w*Spacing.X, jitter.height = 0))
+                                # } else {
+                                #     gg_cat <- geom_boxplot(aes_string(color = Group), fill = input$Fill.Color, width = Spacing.X, position = position_dodge(Spacing.Group), size = input$Cat.Edge)
+                                #     gg_error <- NULL
+                                #     gg_points <- NULL
+                                # }
+                                
                             }
                             
                             if (input$CatType == "Violin plot"){
                                 gg_cat <- geom_violin(aes_string(color = Group), fill = input$Fill.Color, width = Spacing.X, position = position_dodge(Spacing.Group), draw_quantiles = c(.5), size = input$Cat.Edge)
                                 gg_error <- NULL
+                                # gg_points <- NULL
                             }  
                             
                             #4b - edge color not grouped
@@ -1237,16 +1458,39 @@ shinyServer(function(input, output, session) {
                             if (input$CatType == "Bar plot"){
                                 gg_cat <- geom_bar(fill = input$Fill.Color, color = input$Edge.Color, width = Spacing.X, position = position_dodge(Spacing.Group), stat = "summary", fun.y = mean, size = input$Cat.Edge)
                                 gg_error <- stat_summary(geom = "errorbar", color = input$Edge.Color, position = position_dodge(Spacing.Group), fun.data = fun.error, width = input$Error.Cap/100, size = input$Cat.Edge)
+                                gg_points <- NULL
+                            }
+                            
+                            if (input$CatPoints && input$CatType != "Bar plot"){
+                                gg_points <- geom_jitter(width = jitter.w*Spacing.X, height = 0, color = input$Edge.Color, size = input$CatPoints.Size)
+                                outlier.colour <- NA
+                            } else {
+                                gg_points <- NULL
+                                outlier.colour <- NULL
                             }
                             
                             if (input$CatType == "Box plot"){
-                                gg_cat <- geom_boxplot(fill = input$Fill.Color, color = input$Edge.Color, width = Spacing.X, position = position_dodge(Spacing.Group), size = input$Cat.Edge)
+                                gg_cat <- geom_boxplot(fill = input$Fill.Color, color = input$Edge.Color, width = Spacing.X, position = position_dodge(Spacing.Group), size = input$Cat.Edge, outlier.colour = outlier.colour)
                                 gg_error <- NULL
+                                
+                                # if (input$CatPoints){
+                                #     gg_cat <- geom_boxplot(fill = input$Fill.Color, color = input$Edge.Color, width = Spacing.X, position = position_dodge(Spacing.Group), size = input$Cat.Edge, outlier.colour = NA)
+                                #     gg_error <- NULL
+                                #     # gg_points <- geom_jitter(color = input$Edge.Color, width = jitter.w, height = 0)
+                                #     # gg_points <- geom_point(aes_string(fill = Group), color = input$Edge.Color, size = input$CatPoints.Size, position = position_jitterdodge(jitter.width = jitter.w, jitter.height = 0))
+                                #     gg_points <- geom_jitter(width = jitter.w*Spacing.X, height = 0, color = input$Edge.Color, size = input$CatPoints.Size)
+                                # } else {
+                                #     gg_cat <- geom_boxplot(fill = input$Fill.Color, color = input$Edge.Color, width = Spacing.X, position = position_dodge(Spacing.Group), size = input$Cat.Edge)
+                                #     gg_error <- NULL
+                                #     gg_points <- NULL
+                                # }
+                                
                             }
                             
                             if (input$CatType == "Violin plot"){
                                 gg_cat <- geom_violin(fill = input$Fill.Color, color = input$Edge.Color, width = Spacing.X, position = position_dodge(Spacing.Group), draw_quantiles = c(.5), size = input$Cat.Edge)
                                 gg_error <- NULL
+                                # gg_points <- NULL
                             }  
                             
                         }
@@ -1258,6 +1502,9 @@ shinyServer(function(input, output, session) {
                 fig <- fig +
                     gg_cat +
                     gg_error +
+                    gg_points +
+                    # geom_point(position = position_jitter(w = 0.25, h = 0)) +
+                    # geom_jitter(width = 0.25, height = 0) +
                     
                     {if (any(grepl("Edge", input$Cat.Color.Boxes))) eval(parse(text = as.character(pals[which(pals[,1] == input$Cat.Color.Theme),2])))} +
                     {if (any(grepl("Fill", input$Cat.Color.Boxes))) eval(parse(text = as.character(pals[which(pals[,1] == input$Cat.Color.Theme),3])))} +
@@ -1365,10 +1612,13 @@ shinyServer(function(input, output, session) {
                 {if (is.null(input$Legend)) theme(legend.position = "none")} +
                 
                 #iffy way to force the legend name to apply to any scaling type from above (not sure why I need to use "discrete")
-                {if (input$Legend.Title != "") scale_fill_discrete(name = input$Legend.Title)} +
-                {if (input$Legend.Title != "") scale_colour_discrete(name = input$Legend.Title)} +
-                {if (input$Legend.Title != "") scale_shape_discrete(name = input$Legend.Title)} +
-                {if (input$Legend.Title != "") scale_linetype_discrete(name = input$Legend.Title)} +
+                # {if (input$Legend.Title != "") scale_fill_discrete(name = input$Legend.Title)} +
+                # {if (input$Legend.Title != "") scale_colour_discrete(name = input$Legend.Title)} +
+                # {if (input$Legend.Title != "") scale_shape_discrete(name = input$Legend.Title)} +
+                # {if (input$Legend.Title != "") scale_linetype_discrete(name = input$Legend.Title)} +
+               
+                {if (input$Legend.Title != "") guides(colour = guide_legend(input$Legend.Title), size = guide_legend(input$Legend.Title), shape = guide_legend(input$Legend.Title))} +
+        
                 
                 {if (input$Title != "") ggtitle(input$Title)} +
                 {if (input$Title.Position == "Left") theme(plot.title = element_text(hjust = 0))} +
@@ -1516,7 +1766,7 @@ shinyServer(function(input, output, session) {
             shinyjs::hide("div.Linear")
         }    
             
-        if (any(grepl("Quadratic", input$Models))){
+        if (any(grepl("Polynomial", input$Models))){
             shinyjs::show("div.Quadratic")            
         } else {
             shinyjs::hide("div.Quadratic")
@@ -1550,7 +1800,7 @@ shinyServer(function(input, output, session) {
             
         }
         
-        if (any(grepl("results", input$Fit.Quadratic)) && any(grepl("Quadratic", input$Models))){
+        if (any(grepl("results", input$Fit.Quadratic)) && any(grepl("Polynomial", input$Models))){
             
             shinyjs::show("div.Quadratic.Results")            
         } else {
@@ -1710,7 +1960,7 @@ shinyServer(function(input, output, session) {
     output$Poly.Table <- renderTable({
         
         #only if x and y are selected
-        if (input$X_dy != "(none)" & input$Y_dy != "(none)" & any(grepl("Quadratic", input$Models)) & any(grepl("results", input$Fit.Quadratic))){
+        if (input$X_dy != "(none)" & input$Y_dy != "(none)" & any(grepl("Polynomial", input$Models)) & any(grepl("results", input$Fit.Quadratic))){
             
             Data <- V$Data[[V$Current]]
             
@@ -1740,7 +1990,7 @@ shinyServer(function(input, output, session) {
             D <- data.frame(X = X, Y = Y)
             
             #add in grouping variable
-            if (any(grepl("group", input$Fit.Quadratic))) {
+            if (any(grepl("Fit by group", input$Fit.Quadratic))) {
                 Group <- TRUE
                 D$Group <- Data[,input$Group_dy]
                 D <- D[complete.cases(D$X, D$Y, D$Group),]
@@ -1750,13 +2000,30 @@ shinyServer(function(input, output, session) {
                 D <- D[complete.cases(D$X, D$Y),]
             }
             
-            ord <- 2 #in place for higher order polynomials
+            ord <- as.numeric(input$Poly.Order) #in place for higher order polynomials
+            
+            # output$Poly.Order <- renderText(print("\\(Polynomial \\space model: \\space\\space Y = a + bX + cX^2\\)"))
+            
+            Poly.Form <- c("\\(Polynomial \\space model: \\space\\space Y = a\\)",
+                           "\\(Polynomial \\space model: \\space\\space Y = a + bX\\)",
+                           "\\(Polynomial \\space model: \\space\\space Y = a + bX + cX^2\\)",
+                           "\\(Polynomial \\space model: \\space\\space Y = a + bX + cX^2 + dX^3\\)",
+                           "\\(Polynomial \\space model: \\space\\space Y = a + bX + cX^2 + dX^3 + eX^4\\)",
+                           "\\(Polynomial \\space model: \\space\\space Y = a + bX + cX^2 + dX^3 + eX^4 + fX^5\\)")
+            
+            output$Poly.Form <- renderUI({h5(withMathJax(Poly.Form[ord+1]), style = "color: DarkBlue")})
+            
+            
+            
+            
             
             fit <- list()
             
             if (!Group){
                 
                 fit[[1]] <- lm(Y ~ poly(X, ord, raw = TRUE), data = D)
+                
+                # message(fit[[1]]$coefficients)
                 
                 tab <- data.frame(NO.NAME = "Parameter values")
                 names(tab)[1] <- ""
@@ -1765,6 +2032,7 @@ shinyServer(function(input, output, session) {
                     
                     # tab[1, letters[j]] <- signif(fit[[1]]$coefficients[j],5)
                     tab[1, letters[j]] <- sprintf("%5.4g", fit[[1]]$coefficients[j])
+                   
                     
                 }
                 
@@ -1782,10 +2050,12 @@ shinyServer(function(input, output, session) {
                     
                     tab$Group[i] <- levels(D$Group)[i]
                     
-                    for (j in 1:3){ #stucture in place for higher order polynomials
-                        
+                    for (j in 1:(ord+1)){ #stucture in place for higher order polynomials
+                        # message(j)
                         # tab[i, letters[j]] <- signif(fit[[i]]$coefficients[j],5)
+                        
                         tab[i, letters[j]] <- sprintf("%5.4g", fit[[i]]$coefficients[j])
+                        # names(tab)[j] <- letters[j]
                         
                     }
                     

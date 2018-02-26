@@ -30,7 +30,7 @@ choices <- list(
     
     
     Fit.Models = c("Linear", "Quadratic"),
-    Models = c("Linear", "Quadratic", "Power", "Custom"),
+    Models = c("Linear", "Polynomial", "Power", "Custom"),
     Trans.Log = c("X", "Y"),
     Trans.Std = c("X", "Y")
     

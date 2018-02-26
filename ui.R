@@ -270,7 +270,12 @@ shinyUI(
                                                                         #start hidden
                                                                         shinyjs::hidden(div(id = "div.Error",
                                                                                             selectInput("Error", "Error bars", choices = choices$Error, selected = sels$Error)
+                                                                        )),
+                                                                        
+                                                                        shinyjs::hidden(div(id = "div.CatPoints", br(),
+                                                                                            checkboxInput("CatPoints", label = "Show points", value = FALSE)
                                                                         ))
+                                                                        
                                                                  )
                                                              ),
                                                              
@@ -304,7 +309,7 @@ shinyUI(
                                                                  column(width = 6,
                                                                         #can be disabled
                                                                         div(id = "div.Edge.Color",
-                                                                            colourInput("Edge.Color", "Edge color", value = sels$Edge.Color,
+                                                                            colourInput("Edge.Color", "Edge/point color", value = sels$Edge.Color,
                                                                                         palette = "limited", showColour = "background")
                                                                         )
                                                                  ),
@@ -328,7 +333,11 @@ shinyUI(
                                                                  
                                                                  column(width = 6,
                                                                         
-                                                                        numericInput("Error.Cap", "Errorbar cap width (%)", value = sels$Error.Cap, min = 0, max = 100, step = 5)
+                                                                        div(id = "div.CatPoints.Size",
+                                                                                            numericInput("CatPoints.Size", "Point size", value = 2, min = .5, max = 6, step = .5)),
+                                                                        
+                                                                        shinyjs::hidden(div(id = "div.Error.Cap",
+                                                                            numericInput("Error.Cap", "Errorbar cap width (%)", value = sels$Error.Cap, min = 0, max = 100, step = 5)))
                                                                         
                                                                  )
                                                              ),
@@ -528,8 +537,8 @@ shinyUI(
                                                                                             
                                                                                      ),
                                                                                      column(width = 6,
-                                                                                            colourInput("Color.Linear", "Color", value = "black",
-                                                                                                        palette = "limited", showColour = "background")
+                                                                                            div(id = "div.Color.Linear", colourInput("Color.Linear", "Color", value = "black",
+                                                                                                                                     palette = "limited", showColour = "background"))
                                                                                      )
                                                                                  ),
                                                                                  
@@ -549,8 +558,18 @@ shinyUI(
                                                              shinyjs::hidden(div(id = "div.Quadratic",
                                                                                  
                                                                                  hr(style = "margin: 0px 0 10px 0; border: .5px solid #00008B"),
-                                                                                 h5("Quadratic model", style="margin: 0px; font-weight: bold; color: DarkBlue"),
+                                                                                 # h5("Quadratic model", style="margin: 0px; font-weight: bold; color: DarkBlue"),
                                                                                  
+                                                                                 fluidRow(
+                                                                                     column(width = 6,
+                                                                                            h5("Polynomial model", style="margin: 0px; font-weight: bold; color: DarkBlue")
+                                                                                     ),
+                                                                                     
+                                                                                     column(width = 6,
+                                                                                            selectInput("Poly.Order", "Polynomial order", choices = as.character(1:5), selected = "2")
+                                                                                     )
+                                                                                 ),
+                                                                                
                                                                                  fluidRow(
                                                                                      column(width = 6,
                                                                                             checkboxGroupInput("Fit.Quadratic", NULL,
@@ -559,8 +578,8 @@ shinyUI(
                                                                                             
                                                                                      ),
                                                                                      column(width = 6,
-                                                                                            colourInput("Color.Quadratic", "Color", value = "black",
-                                                                                                        palette = "limited", showColour = "background")
+                                                                                            div(id = "div.Color.Quadratic", colourInput("Color.Quadratic", "Color", value = "black",
+                                                                                                        palette = "limited", showColour = "background"))
                                                                                      )
                                                                                  ),
                                                                                  
@@ -590,8 +609,8 @@ shinyUI(
                                                                                             
                                                                                      ),
                                                                                      column(width = 6,
-                                                                                            colourInput("Color.Power", "Color", value = "black",
-                                                                                                        palette = "limited", showColour = "background")
+                                                                                            div(id = "div.Color.Power", colourInput("Color.Power", "Color", value = "black",
+                                                                                                                                    palette = "limited", showColour = "background"))
                                                                                      )
                                                                                  ),
                                                                                  
@@ -638,8 +657,8 @@ shinyUI(
                                                                                             
                                                                                      ),
                                                                                      column(width = 6,
-                                                                                            colourInput("Color.Custom", "Color", value = "black",
-                                                                                                        palette = "limited", showColour = "background")
+                                                                                            div(id = "div.Color.Custom", colourInput("Color.Custom", "Color", value = "black",
+                                                                                                                                     palette = "limited", showColour = "background"))
                                                                                      )
                                                                                      
                                                                                  ),
@@ -826,9 +845,9 @@ shinyUI(
                                                          
                                                          hr(style = "margin: 0px 0 10px 0; border: .5px solid #00008B"),
                                                          
-                                                         h5(withMathJax("\\(Quadratic \\space model: \\space\\space Y = a + bX + cX^2\\)"), style = "color: DarkBlue"),
-                                                         
-                                                         
+                                                         # h5(withMathJax("\\(Polynomial \\space model: \\space\\space Y = a + bX + cX^2\\)"), style = "color: DarkBlue"),
+                                                         # h5(withMathJax(textOutput("Poly.Order")), style = "color: DarkBlue"),
+                                                         uiOutput("Poly.Form"),
                                                          
                                                          tableOutput("Poly.Table")
                                      )),
@@ -894,23 +913,20 @@ shinyUI(
                                      
                                      br(),
                                      
-                                     h4("Version 2.03  (29 November 2017)"),
+                                     h4("Version 2.04  (26 February 2018)"),
                                      br(),
                                      h5("Created by Alden Griffith (Environmental Studies), Hannah Murphy ('19), Jeremy Wilmer (Psychology)"),
                                      br(),
                                      h5("Please send any comments / errors to agriffit@wellesley.edu"),
                                      br(),
                                      h5("New in this update:"),
-                                     h5("- Basic statistical tests with figures: regressions, one- and two-way ANOVAs"),
-                                     h5("- Variable transformation options"),
-                                     h5("- Improved behavior of model selections when switching between variables"),
+                                     h5("- Can now color model fits by group"),
+                                     h5("- Quadratic model fit replaced by more general polynomial model (order 1-5)"),
+                                     h5("- Fixed a issue when adding a custom legend title"),
                                      br(),
                                      h5("Known issues:"),
-                                     h5("- Fitted model selections are not specific to datasets and will remain the same when switching datasets (will be fixed soon)"),
-                                     br(),
-                                     h5("Not fully developed:"),
-                                     h5("- Model fit colors / line type cannot yet be set according to the grouping variable"),
-                                    
+                                     h5("- Fitted model selections are not specific to datasets and will remain the same when switching datasets"),
+                                     
                                      br()
                                      
                                      
