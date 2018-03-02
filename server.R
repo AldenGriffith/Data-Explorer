@@ -32,6 +32,8 @@ shinyServer(function(input, output, session) {
         Fig = NULL,
         Figs = list(),
         Figs.dim = list(),
+        CatVars = list(),
+        # CatFirm = list(),
         Group.Sym.Color = list(),  #these are set to FALSE in newData.R. Important for updating checkboxes, but then allowing them to be unchecked by user
         Group.Line.Color = list(),
         Group.Cat.Color = list(),
@@ -119,29 +121,70 @@ shinyServer(function(input, output, session) {
             
             if (file.type == ".csv") {
                 
-                New.Data <- read.csv(input$file$datapath, header=TRUE, sep=",")
+                # New.Data <- read.csv(input$file$datapath, header=TRUE, sep=",")
+                
+                New.Data <- tryCatch({read.csv(input$file$datapath, header=TRUE, sep=",")},
+                                     error=function(e){"Data import error"})
+                
                 
             } else if (file.type == ".xlsx" | file.type == ".xls"){
                 
-                New.Data <- as.data.frame(read_excel(path, sheet = input$Sheet))
+                # New.Data <- as.data.frame(read_excel(path, sheet = input$Sheet))
+                
+                New.Data <- tryCatch({as.data.frame(read_excel(path, sheet = input$Sheet))},
+                                     error=function(e){"Data import error"})
+                
+            } else {
+                
+                New.Data <- tryCatch({read.csv(input$file$datapath, header=TRUE, sep=",")},
+                                     error=function(e){"Data import error"})
                 
             }
             
-            if (V$ON) source("selSave.R", local=TRUE) #will not run if no dataset yet uploaded
+            if (!is.character(New.Data)){
+                
+                if (V$ON) source("selSave.R", local=TRUE) #will not run if no dataset yet uploaded
+                
+                #Adds new dataset and switches to it
+                switching <<- TRUE
+                source("newData.R", local = TRUE)
+                source("selNewData.R", local=TRUE)
+                # V$last.switched <-as.numeric(Sys.time())
+                # Sys.sleep(2)
+                # V$switched <- TRUE
+                
+                #Removes post-upload ui objects
+                output$Sheet <- renderUI(return()) #probably not necessary (doesn't come up with .csv file)
+                output$Submit.Button <- renderUI(return())
+                output$Data.Name <- renderUI(return())
             
-            #Adds new dataset and switches to it
-            switching <<- TRUE
-            source("newData.R", local = TRUE)
-            source("selNewData.R", local=TRUE)
-            # V$last.switched <-as.numeric(Sys.time())
-            # Sys.sleep(2)
-            # V$switched <- TRUE
-            
-            #Removes post-upload ui objects
-            output$Sheet <- renderUI(return()) #probably not necessary (doesn't come up with .csv file)
-            output$Submit.Button <- renderUI(return())
-            output$Data.Name <- renderUI(return())
-            
+                } else {
+                
+                    showModal(modalDialog(
+                        title = "Dataset upload error",
+                        HTML("There is an error in the formatting or file type of your selected dataset.<br> 
+                        -Datasets should be formatted with Columns = Variables and Rows = Samples/Observataions.<br>
+                        -The FIRST row should contain variable names."),
+                        easyClose = TRUE
+                    ))
+                    
+                    
+                    output$Upload <- renderUI({
+                        
+                        fileInput('file', 'Upload new dataset (.csv, .xls, .xlsx)'#,
+                                  # accept=c('text/csv',
+                                  #          'text/comma-separated-values,text/plain',
+                                  #          '.csv',
+                                  #          '.xls',
+                                  #          '.xlsx')
+                        )
+                    })
+                    #Removes post-upload ui objects
+                    output$Sheet <- renderUI(return()) #probably not necessary (doesn't come up with .csv file)
+                    output$Submit.Button <- renderUI(return())
+                    output$Data.Name <- renderUI(return())
+                
+                }
         }, ignoreInit = TRUE, once = TRUE) #'ignoreInit' is set to TRUE to keep this from being run when button is (dynamically) created. 'once' = TRUE prevents stange repeat behavior...
         
         #switch.obs$resume()
@@ -194,6 +237,14 @@ shinyServer(function(input, output, session) {
         if (input$Y_dy != "(none)"){
             if (!is.element(input$Y_dy,V$Choices[[V$Current]]$Group_dy)){
                 updateSelectInput(session, "Y_dy", label = "Y variable (continuous)")
+                
+                # sel.Trans.Log <- input$Trans.Log
+                # 
+                # 
+                # updateCheckboxGroupInput(session, "Trans.Log", NULL, inline = TRUE,
+                #                          choices = choices$Trans.Log,
+                #                          selected = sel.Trans.Log)
+                
             }
         } else {
             #No Y variable selected
@@ -435,19 +486,161 @@ shinyServer(function(input, output, session) {
     })
     
     
-    # # # Observe transformation options
+    # # # # Observe transformation options
+    # observe({
+    #     
+    #     if(input$Show.Trans){
+    #         
+    #         shinyjs::show("div.Transform")
+    #         
+    #     } else {
+    #         
+    #         shinyjs::hide("div.Transform")
+    #     }
+    #     
+    # })
+    
     observe({
         
-        if(input$Show.Trans){
+        if(input$Show.Vars.Options){
             
-            shinyjs::show("div.Transform")
+            shinyjs::show("div.Show.Vars.Options")
             
         } else {
             
-            shinyjs::hide("div.Transform")
+            shinyjs::hide("div.Show.Vars.Options")
         }
         
     })
+    
+    observe({
+        
+        
+        if(V$ON){
+            
+            i <- V$Current
+            
+            #Awkward way to deal with logical statements involving NULL and non-NULL objects (turn NULL into a character)
+            char.null <- function(x){
+                if (is.null(x)){
+                    return("NULL123")
+                } else {
+                    return(x)
+                }
+            }
+            
+           NEW <- char.null(input$CatVars_dy)
+           OLD <- char.null(V$CatVars[[i]]$Sel)
+           
+           if (!identical(sort(NEW),sort(OLD))){
+
+              #NEW and OLD are not the same
+               
+               NEW <- setdiff(NEW,"NULL123")
+               OLD <- setdiff(OLD,"NULL123")
+               
+               message(length(NEW))
+               message(length(OLD))
+               
+               
+               if (length(NEW) > length(OLD)) {  #add new cat var (NEW is longer than OLD)
+                   
+                   message("Add new cat var")
+                   
+                   #identify new variable and factor it
+                   New.Var <- setdiff(NEW, OLD)
+                   
+                   if (New.Var == input$Y_dy){
+                       
+                       showModal(modalDialog(
+                           title = "Selected variable currently in use",
+                           HTML("You cannot change this variable while is it currently in use as the Y variable"),
+                           easyClose = TRUE
+                           ))
+                       
+                       updateSelectInput(session, "CatVars_dy", choices = V$Choices[[i]]$CatVars_dy, selected = V$CatVars[[i]]$Sel)
+                       
+                       
+                   } else {
+                   
+                   
+                   V$Data[[i]][,New.Var] <- factor(V$Data[[i]][,New.Var])
+                   
+                   # #get current list of x variables
+                   # Current.X.Vars <- setdiff(V$Choices[[i]]$X_dy, "(none)")
+                   # #add new variable to list of x variables
+                   # V$Choices[[i]]$X_dy <- c("(none)", sort(c(Current.X.Vars, New.Var)))
+                   # updateSelectInput(session, "X_dy", choices = V$Choices[[i]]$X_dy, selected = input$X_dy)
+                   
+                   #get current list of grouping variables
+                   Current.Group.Vars <- setdiff(V$Choices[[i]]$Group_dy, "(none)")
+                   #add new variable to list of groupinig variables
+                   V$Choices[[i]]$Group_dy <- c("(none)", sort(c(Current.Group.Vars, New.Var)))
+                   updateSelectInput(session, "Group_dy", choices = V$Choices[[i]]$Group_dy, selected = input$Group_dy)
+                   #add new variable to list of subsetting variables
+                   V$Choices[[i]]$Subset_dy <- c("(none)", sort(c(Current.Group.Vars, New.Var)))
+                   updateSelectInput(session, "Subset_dy", choices = V$Choices[[i]]$Group_dy, selected = input$Subset_dy)
+                   
+                   #remove new variable from list of y variables
+                   V$Choices[[i]]$Y_dy <- c("(none)", setdiff(V$Choices[[i]]$Y_dy, c("(none)", New.Var)))
+                   updateSelectInput(session, "Y_dy", choices = V$Choices[[i]]$Y_dy, selected = input$Y_dy)
+                   
+                   }
+                   
+               } else {  #remove cat var (NEW is shorter than OLD)
+                   
+                   message("Drop cat var")
+                   
+                   #identify removed variable
+                   Rem.Var <- setdiff(OLD, NEW)
+                   
+                   if (Rem.Var == input$Group_dy | Rem.Var == input$Subset_dy){
+                       
+                       showModal(modalDialog(
+                           title = "Selected variable currently in use",
+                           HTML("You cannot change this variable while is it currently in use as the grouping or subsetting variable"),
+                           easyClose = TRUE
+                       ))
+                       
+                       updateSelectInput(session, "CatVars_dy", choices = V$Choices[[i]]$CatVars_dy, selected = V$CatVars[[i]]$Sel)
+                       
+                       
+                   } else {
+                   
+                       #remove variable from categorical and make continuous
+                       V$Data[[i]][,Rem.Var] <- as.numeric(as.character(V$Data[[i]][,Rem.Var]))
+                       
+                       #get current list of y variables
+                       Current.Y.Vars <- setdiff(V$Choices[[i]]$Y_dy, "(none)")
+                       #add variable to list of y variables
+                       V$Choices[[i]]$Y_dy <- c("(none)", sort(c(Current.Y.Vars, Rem.Var)))
+                       updateSelectInput(session, "Y_dy", choices = V$Choices[[i]]$Y_dy, selected = input$Y_dy)
+                       
+                       # #remove new variable from list of x variables
+                       # V$Choices[[i]]$X_dy <- c("(none)", setdiff(V$Choices[[i]]$X_dy, c("(none)", Rem.Var)))
+                       # updateSelectInput(session, "X_dy", choices = V$Choices[[i]]$X_dy, selected = input$X_dy)
+                       
+                       #remove new variable from list of grouping variables
+                       V$Choices[[i]]$Group_dy <- c("(none)", setdiff(V$Choices[[i]]$Group_dy, c("(none)", Rem.Var)))
+                       updateSelectInput(session, "Group_dy", choices = V$Choices[[i]]$Group_dy, selected = input$Group_dy)
+                       
+                       #remove new variable from list of subsetting variables
+                       V$Choices[[i]]$Subset_dy <- c("(none)", setdiff(V$Choices[[i]]$Subset_dy, c("(none)", Rem.Var)))
+                       updateSelectInput(session, "Subset_dy", choices = V$Choices[[i]]$Subset_dy, selected = input$Subset_dy)
+                       
+                   }
+                   
+               }
+               
+               
+               V$CatVars[[i]]$Sel <- input$CatVars_dy
+               
+           }
+           
+            
+        }
+    })
+    
     
     
     # # # Observe grouping variable and update symbol/line options
@@ -739,6 +932,40 @@ shinyServer(function(input, output, session) {
     })
     
     
+    # # # Observe change cat variables
+    # 
+    # observe({
+    #     
+    #     if(V$ON){
+    #         
+    #         # if (input$CatVars_dy != "(none)"){
+    #         #     
+    #         #     # #need to refactor sometimes. might have to do with excel vs csv  - crashes on switch?!
+    #         #     # V$Data[[V$Current]][,input$Subset_dy] <- factor(V$Data[[V$Current]][,input$Subset_dy])
+    #         #     message(is.factor(V$Data[[V$Current]][,input$Subset_dy]))
+    #         #     
+    #         #     
+    #         #     V$Choices[[V$Current]]$SubSel_dy <- levels(V$Data[[V$Current]][,input$Subset_dy])
+    #         #     
+    #         #     updateSelectInput(session,"SubSel_dy", "Subsetting groups", choices = V$Choices[[V$Current]]$SubSel_dy,
+    #         #                       selected = NULL)
+    #         #     
+    #         #     shinyjs::show("SubSel_dy")
+    #         #     
+    #         # } else {
+    #         #     
+    #         #     V$Choices[[V$Current]]$SubSel_dy <- choices$SubSel_dy
+    #         #     
+    #         #     updateSelectInput(session,"SubSel_dy", "Subsetting groups", choices = choices$SubSel_dy,
+    #         #                       selected = NULL)
+    #         #     
+    #         #     shinyjs::hide("SubSel_dy")
+    #         # }
+    #         
+    #         
+    #     }
+    # })
+    
     # # # Observe if categorical X axis
     observe({
         
@@ -845,7 +1072,33 @@ shinyServer(function(input, output, session) {
             }
             
             
-            if (is.element("Y", input$Trans.Log) && min(D[,input$Y_dy], na.rm=TRUE) > 0) D[,input$Y_dy] <- log(D[,input$Y_dy], base = base)
+            # if (is.element("Y", input$Trans.Log) && min(D[,input$Y_dy], na.rm=TRUE) > 0) D[,input$Y_dy] <- log(D[,input$Y_dy], base = base)
+            if (is.element("Y", input$Trans.Log)){
+                
+                if (min(D[,input$Y_dy], na.rm=TRUE) > 0){
+                    
+                    D[,input$Y_dy] <- log(D[,input$Y_dy], base = base)
+                    
+                } else {
+                    
+                    showModal(modalDialog(
+                        title = "Data transformation error",
+                        "Cannot apply log transformation: Y variable contains values less than or equal to zero",
+                        easyClose = TRUE
+                    ))
+                    
+                    sel.Trans.Log <- input$Trans.Log
+                    sel.Trans.Log <- sel.Trans.Log[-which(sel.Trans.Log == "Y")]
+                    
+                    updateCheckboxGroupInput(session, "Trans.Log", NULL, inline = TRUE,
+                                             choices = choices$Trans.Log,
+                                             selected = sel.Trans.Log)
+                    
+                }
+                
+            } 
+            
+            
             if (is.element("Y", input$Trans.Std)) D[,input$Y_dy] <- scale(D[,input$Y_dy])
             
             
@@ -885,7 +1138,34 @@ shinyServer(function(input, output, session) {
             if (is.numeric(D[,input$X_dy])){
                 
                 #Transformation
-                if (is.element("X", input$Trans.Log) && min(D[,input$X_dy], na.rm=TRUE) > 0) D[,input$X_dy] <- log(D[,input$X_dy], base = base)
+                # if (is.element("X", input$Trans.Log) && min(D[,input$X_dy], na.rm=TRUE) > 0) D[,input$X_dy] <- log(D[,input$X_dy], base = base)
+                
+                if (is.element("X", input$Trans.Log)){
+                    
+                    if (min(D[,input$X_dy], na.rm=TRUE) > 0){
+                        
+                        D[,input$X_dy] <- log(D[,input$X_dy], base = base)
+                        
+                    } else {
+                        
+                        showModal(modalDialog(
+                            title = "Data transformation error",
+                            "Cannot apply log transformation: X variable contains values less than or equal to zero",
+                            easyClose = TRUE
+                        ))
+                        
+                        sel.Trans.Log <- input$Trans.Log
+                        sel.Trans.Log <- sel.Trans.Log[-which(sel.Trans.Log == "X")]
+                        
+                        updateCheckboxGroupInput(session, "Trans.Log", NULL, inline = TRUE,
+                                                 choices = choices$Trans.Log,
+                                                 selected = sel.Trans.Log)
+                        
+                    }
+                    
+                } 
+                
+                
                 if (is.element("X", input$Trans.Std)) D[,input$X_dy] <- scale(D[,input$X_dy])
                 
                 X <- D[,input$X_dy]

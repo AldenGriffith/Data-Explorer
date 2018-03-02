@@ -35,7 +35,11 @@ V$Name[i] <- input$Data.Name
 V$Choices[[i]]$Y_dy <- c("(none)", names(New.Data[vars.num]))
 V$Choices[[i]]$X_dy <- c("(none)", names(New.Data))
 V$Choices[[i]]$Group_dy <- c("(none)", names(New.Data[vars.cat]))
+# V$CatFirm[[i]] <- names(New.Data[vars.cat])
 V$Choices[[i]]$Subset_dy <- V$Choices[[i]]$Group
+V$Choices[[i]]$CatVars_dy <- setdiff(V$Choices[[i]]$Y_dy, "(none)")
+# V$CatVars[[i]] <- V$Choices[[i]]$Group[-which(V$Choices[[i]]$Group == "(none)")]
+V$CatVars[[i]] <- list(Sel = NULL)
 
 #Setup list for saved figures (allows for separate galleries for datasets)
 V$Figs[[i]] <- list()

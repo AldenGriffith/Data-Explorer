@@ -8,6 +8,7 @@ sels <- list(
     Group_dy = "(none)",
     Subset_dy = "(none)",
     SubSel_dy = NULL,
+    CatVars_dy = NULL,
     Symbols_dy = choices$Symbols_dy[1],
     Sym.Shape_dy = shapes[1],
     Lines_dy = NULL,

@@ -14,6 +14,7 @@ updateSelectInput(session, "Y_dy", choices = V$Choices[[i]]$Y_dy, selected = V$S
 updateSelectInput(session, "Group_dy", choices = V$Choices[[i]]$Group_dy, selected = V$Sel[[i]]$Group_dy)
 updateSelectInput(session, "Subset_dy", choices = V$Choices[[i]]$Subset_dy, selected = V$Sel[[i]]$Subset_dy)
 updateSelectInput(session, "SubSel_dy", choices = V$Choices[[i]]$SubSel_dy, selected = V$Sel[[i]]$SubSel_dy)
+updateSelectInput(session, "CatVars_dy", choices = V$Choices[[i]]$CatVars_dy, selected = V$Sel[[i]]$CatVars_dy)
 updateCheckboxGroupInput(session, "Symbols_dy", inline = TRUE, choices = V$Choices[[i]]$Symbols_dy, selected = V$Sel[[i]]$Symbols_dy)
 updateSelectInput(session, "Sym.Shape_dy", choices = V$Choices[[i]]$Sym.Shape_dy, selected = V$Sel[[i]]$Sym.Shape_dy)
 updateCheckboxGroupInput(session, "Lines_dy", inline = TRUE, choices = V$Choices[[i]]$Lines_dy, selected = V$Sel[[i]]$Lines_dy)

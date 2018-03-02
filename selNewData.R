@@ -9,6 +9,7 @@ updateSelectInput(session, "Y_dy", choices = V$Choices[[i]]$Y_dy, selected = sel
 updateSelectInput(session, "Group_dy", choices = V$Choices[[i]]$Group_dy, selected = sels$Group_dy)
 updateSelectInput(session, "Subset_dy", choices = V$Choices[[i]]$Subset_dy, selected = sels$Subset_dy)
 updateSelectInput(session, "SubSel_dy", choices = V$Choices[[i]]$SubSel_dy, selected = sels$SubSel_dy)
+updateSelectInput(session, "CatVars_dy", choices = V$Choices[[i]]$CatVars_dy, selected = V$CatVars[[i]]$Sel)
 
 #These objects are being set to the startup choices
 updateCheckboxGroupInput(session, "Symbols_dy", inline = TRUE, choices = choices$Symbols_dy, selected = sels$Symbols_dy)

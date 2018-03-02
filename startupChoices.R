@@ -9,6 +9,7 @@ choices <- list(
     Group_dy = "(none)",
     Subset_dy = "(none)",
     SubSel_dy = NULL,
+    CatVars_dy = NULL,
     Symbols_dy = c("Show", "Filled"),
     Sym.Shape_dy = shapes,
     Lines_dy = "Show",

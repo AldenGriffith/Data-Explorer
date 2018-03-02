@@ -9,6 +9,7 @@ V$Sel[[V$Current]] <- list(
     Group_dy = input$Group_dy,
     Subset_dy = input$Subset_dy,
     SubSel_dy = input$SubSel_dy,
+    CatVars_dy = input$CatVars_dy,
     Symbols_dy = input$Symbols_dy,
     Sym.Shape_dy = input$Sym.Shape_dy,
     Lines_dy = input$Lines_dy,
