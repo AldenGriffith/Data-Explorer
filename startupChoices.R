@@ -10,6 +10,8 @@ choices <- list(
     Subset_dy = "(none)",
     SubSel_dy = NULL,
     CatVars_dy = NULL,
+    Scat.Error.X_dy = "(none)",
+    Scat.Error.Y_dy = "(none)",
     Symbols_dy = c("Show", "Filled"),
     Sym.Shape_dy = shapes,
     Lines_dy = "Show",
@@ -31,8 +33,8 @@ choices <- list(
     
     
     Fit.Models = c("Linear", "Quadratic"),
-    Models = c("Linear", "Polynomial", "Power", "Custom"),
-    Trans.Log = c("X", "Y"),
-    Trans.Std = c("X", "Y")
+    Models = c("Linear", "Polynomial", "Power", "Exponential", "Custom"),
+    TransLog = c("X", "Y"),
+    TransStd = c("X", "Y")
     
 )

@@ -10,6 +10,9 @@ updateSelectInput(session, "Group_dy", choices = V$Choices[[i]]$Group_dy, select
 updateSelectInput(session, "Subset_dy", choices = V$Choices[[i]]$Subset_dy, selected = sels$Subset_dy)
 updateSelectInput(session, "SubSel_dy", choices = V$Choices[[i]]$SubSel_dy, selected = sels$SubSel_dy)
 updateSelectInput(session, "CatVars_dy", choices = V$Choices[[i]]$CatVars_dy, selected = V$CatVars[[i]]$Sel)
+updateSelectInput(session, "Scat.Error.X_dy", choices = V$Choices[[i]]$Scat.Error.X_dy, selected = sels$Scat.Error.X_dy)
+updateSelectInput(session, "Scat.Error.Y_dy", choices = V$Choices[[i]]$Scat.Error.Y_dy, selected = sels$Scat.Error.Y_dy)
+
 
 #These objects are being set to the startup choices
 updateCheckboxGroupInput(session, "Symbols_dy", inline = TRUE, choices = choices$Symbols_dy, selected = sels$Symbols_dy)
@@ -36,8 +39,8 @@ updateSelectInput(session, "Title.Position", choices = choices$Title.Position, s
 updateCheckboxGroupInput(session, "Legend", "", inline = TRUE, choices = choices$Legend, selected = sels$Legend)
 updateSelectInput(session, "Legend.Position", choices = choices$Legend.Position, selected = sels$Legend.Position)
 
-updateCheckboxGroupInput(session, "Trans.Log", inline = TRUE, choices = choices$Trans.Log, selected = sels$Trans.Log)
-updateCheckboxGroupInput(session, "Trans.Std", inline = TRUE, choices = choices$Trans.Std, selected = sels$Trans.Std)
+updateCheckboxGroupInput(session, "TransLog", inline = TRUE, choices = choices$TransLog, selected = sels$TransLog)
+updateCheckboxGroupInput(session, "TransStd", inline = TRUE, choices = choices$TransStd, selected = sels$TransStd)
 updateCheckboxGroupInput(session, "Fit.Models", choices = choices$Fit.Models, selected = sels$Fit.Models)
 updateCheckboxGroupInput(session, "Models", NULL, inline = TRUE, choices = choices$Models, selected = sels$Models)
 

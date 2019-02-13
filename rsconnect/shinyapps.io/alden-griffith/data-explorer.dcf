@@ -1,0 +1,10 @@
+name: data-explorer
+title:
+username:
+account: alden-griffith
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 663881
+bundleId: 1834717
+url: https://alden-griffith.shinyapps.io/data-explorer/
+when: 1548353244.08476

@@ -15,6 +15,10 @@ updateSelectInput(session, "Group_dy", choices = V$Choices[[i]]$Group_dy, select
 updateSelectInput(session, "Subset_dy", choices = V$Choices[[i]]$Subset_dy, selected = V$Sel[[i]]$Subset_dy)
 updateSelectInput(session, "SubSel_dy", choices = V$Choices[[i]]$SubSel_dy, selected = V$Sel[[i]]$SubSel_dy)
 updateSelectInput(session, "CatVars_dy", choices = V$Choices[[i]]$CatVars_dy, selected = V$Sel[[i]]$CatVars_dy)
+updateSelectInput(session, "Scat.Error.X_dy", choices = V$Choices[[i]]$Scat.Error.X_dy, selected = V$Sel[[i]]$Scat.Error.X_dy)
+updateSelectInput(session, "Scat.Error.Y_dy", choices = V$Choices[[i]]$Scat.Error.Y_dy, selected = V$Sel[[i]]$Scat.Error.Y_dy)
+
+
 updateCheckboxGroupInput(session, "Symbols_dy", inline = TRUE, choices = V$Choices[[i]]$Symbols_dy, selected = V$Sel[[i]]$Symbols_dy)
 updateSelectInput(session, "Sym.Shape_dy", choices = V$Choices[[i]]$Sym.Shape_dy, selected = V$Sel[[i]]$Sym.Shape_dy)
 updateCheckboxGroupInput(session, "Lines_dy", inline = TRUE, choices = V$Choices[[i]]$Lines_dy, selected = V$Sel[[i]]$Lines_dy)
@@ -40,8 +44,8 @@ updateSelectInput(session, "Title.Position", choices = choices$Title.Position, s
 checkboxGroupInput("Legend", "", inline = TRUE, choices = choices$Legend, selected = V$Sel[[i]]$Legend)
 updateSelectInput(session, "Legend.Position", choices = choices$Legend.Position, selected = V$Sel[[i]]$Legend.Position)
 
-updateCheckboxGroupInput(session, "Trans.Log", inline = TRUE, choices = choices$Trans.Log, selected = V$Sel[[i]]$Trans.Log)
-updateCheckboxGroupInput(session, "Trans.Std", inline = TRUE, choices = choices$Trans.Std, selected = V$Sel[[i]]$Trans.Std)
+updateCheckboxGroupInput(session, "TransLog", inline = TRUE, choices = choices$TransLog, selected = V$Sel[[i]]$TransLog)
+updateCheckboxGroupInput(session, "TransStd", inline = TRUE, choices = choices$TransStd, selected = V$Sel[[i]]$TransStd)
 updateCheckboxGroupInput(session, "Fit.Models", choices = choices$Fit.Models, selected = V$Sel[[i]]$Fit.Models)
 updateCheckboxGroupInput(session, "Models", NULL, inline = TRUE, choices = choices$Models, selected = V$Sel[[i]]$Models)
 

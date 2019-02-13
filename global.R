@@ -7,7 +7,8 @@ library(ggthemes)
 library(shinyjs)
 library(colourpicker)
 library(minpack.lm)
+library(readr)
 
-enableBookmarking(store = "url")
+enableBookmarking(store = "server")
 
 

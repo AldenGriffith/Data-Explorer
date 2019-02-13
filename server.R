@@ -6,8 +6,19 @@ source("startupChoices.R")
 source("startupSelections.R")
 
 
+#to pre-load datasets:
+#  (1) load the  files here (rds files that contain a single data frame, one at a time)
+#  (2) V$Load.Data (below) must be a char vector with the object names loaded
+#  (3) V$Load.Data.Names (below) must be a char vector with the dataset names to display
+#  (4) V$do.demo.modal (below) = TRUE
+
+# load("data/Garlic Mustard.rds")
+# load("data/Global Temperatures.rds")
+
+
 #SHINY SERVER ----
 shinyServer(function(input, output, session) {
+    
     
     # DO NOT EDIT THIS SECTION  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ----- 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
@@ -20,6 +31,9 @@ shinyServer(function(input, output, session) {
     # # # Creates list object to store uploaded data files and corresponding info (can be accessed within/across reactive expressions)
     V <- reactiveValues(
         
+        Load.Data = NULL,# c("Global_Temps", "Garlic_Mustard"),
+        Load.Data.Names = NULL,#c("Global Temperature Datasets", "Garlic Mustard Data"),
+        do.demo.modal = FALSE,
         Data = list(),  #data
         Name = NULL,  #dataset name (will be char vector)
         X = list(),  #X variables (continuous)
@@ -40,15 +54,122 @@ shinyServer(function(input, output, session) {
         Group.Fit.Linear = list(),
         Group.Fit.Quadratic = list(),
         Group.Fit.Power = list(),
+        Group.Fit.Exp = list(),
         Group.Fit.Custom = list(),
         form = list(), #custom formula
-        params = list() #custom parameters
+        params = list(), #custom parameters
+        exp.form = list(),
+        exp.params = list()
+        
         # last.switched = as.numeric(Sys.time()),  #used to store Sys.time() when last switched - pauses group observer
         # switched = FALSE
+        # new.upload = new.upload,
+        # switching = switching
         
     )
     
-    ## migth want to hide hidden objects here on startup?
+    setBookmarkExclude(c("Do.Custom", "Save.Fig", "file", "Submit.Button")) 
+    
+    onBookmark(function(state) {
+        
+        # input <- state$input
+        # 
+        # V$Sel[[V$Current]]$X_dy <- input$X_dy
+        
+        # print(input$X_dy)
+        # hello <- list(X_dy = input$X_dy, Fill.Color = input$Fill.Color)
+        # print(hello)
+        # 
+        # V$Sel[[1]]$X_dy <- input$X_dy
+        # print(V$Sel[[1]]$X_dy)
+        
+        # print(V$Current)
+        
+        source("selSave.R", local=TRUE)
+        
+        
+        In.V <- isolate(names(V))
+        
+        for (i in 1:length(In.V)){
+            
+            state$values$V[[In.V[i]]] <- V[[In.V[i]]]
+            
+        }
+        
+        # state$values$V <- V
+        
+        state$values$new.upload <- new.upload
+        state$values$switching <- switching
+        
+        state$values$colors <- colors
+        state$values$shapes <- shapes
+        state$values$lty <- lty
+        state$values$lookup <- lookup
+        state$values$mean_sd <- mean_sd
+        state$values$no_error <- no_error
+        state$values$pals <- pals
+        state$values$legend.position <- legend.position
+        state$values$name.len <- name.len
+        
+        state$values$choices <- choices
+        state$values$sels <- sels
+        
+        # state$values$new.upload <- new.upload
+        # state$values$switching <- switching
+        
+        
+        
+    })
+    
+    # Read values from state$values when we restore
+    onRestore(function(state) {
+        
+        In.V <- isolate(names(state$values$V))
+        
+        for (i in 1:length(In.V)){
+            
+            V[[In.V[i]]] <- state$values$V[[In.V[i]]]
+            
+        }
+        
+        # V <- state$values$V
+        # 
+        new.upload <<- state$values$new.upload
+        switching <<- state$values$switching
+        
+        colors <- state$values$colors
+        shapes <- state$values$shapes
+        lty <- state$values$lty
+        lookup <- state$values$lookup
+        mean_sd <- state$values$mean_sd
+        no_error <- state$values$no_error
+        pals <- state$values$pals
+        legend.position <- state$values$legend.position
+        name.len <- state$values$name.len
+        
+        choices <- state$values$choices
+        sels <- state$values$sels
+        
+        # new.upload <- state$values$V$new.upload
+        # switching <- state$values$V$switching
+        
+        # i <- V[[Current]]
+        
+        # updateSelectInput(session, "X_dy", choices = V$Choices[[i]]$X_dy, selected = sels$X_dy)
+        
+        source("selUpdate.R", local = TRUE)
+        
+        updateSelectInput(session, "Use.Data",
+                          choices = V$Name,
+                          selected = V$Name[V$Current])
+        
+        updateSelectInput(session,"Saved.Figs_dy",
+                          choices = names(V$Figs[[1]]),
+                          selected = names(V$Figs[[1]])[V$Current])
+        
+        #!!! need to update dataset list and save figs
+        
+    })
     
     
     
@@ -65,6 +186,68 @@ shinyServer(function(input, output, session) {
                   #          '.xlsx')
                   )
     })
+    
+    
+    
+    observe({
+        
+        if (!is.null(V$Load.Data)){
+            
+            
+            for (i in 1:length(V$Load.Data)){
+                
+              
+                # New.Data <- load(V$Load.Data[i], envir = .GlobalEnv)
+                New.Data <- get(V$Load.Data[i])
+                
+                message(str(New.Data))
+                
+                
+                Data.Name <- sub(".rds", "", V$Load.Data.Names[i])
+                message(Data.Name)
+                
+                if (V$ON) source("selSave.R", local=TRUE) #will not run if no dataset yet uploaded
+                
+                #Adds new dataset and switches to it
+                switching <<- TRUE
+                source("newData.R", local = TRUE)
+                source("selNewData.R", local=TRUE)
+                
+                switching <<- FALSE
+            }
+            
+            V$Load.Data <- NULL
+            
+        }
+        
+        
+        
+    })
+    
+    observe({
+        if (V$do.demo.modal){
+            
+            showModal(modalDialog(
+                title = "Wellesley Data Explorer Demo",
+                HTML("This is a fully functional version of the Data Explorer, but with two pre-loaded datasets:
+                     <br><br> 
+                     (1) Garlic mustard (<i>Alliaria petiolata</i>) plant demography data (Griffith Lab, 2018)<br> 
+                     (2) Global temperature time series from 5 commonly used datasets
+                     <br><br>
+                     The regular Data Explorer without pre-loaded data can be accessed here:
+                     <br>
+                     <a href = 'http://r.wellesley.edu:3838/apps/data-explorer'>http://r.wellesley.edu:3838/apps/data-explorer</a>
+                     <br><br>
+                     Contact Alden Griffith (agriffit@wellesley.edu) with any questions/comments
+                     "),
+                easyClose = TRUE
+                ))
+            
+            V$do.demo.modal <- FALSE
+            
+        }
+    })
+    
     
     # # # Action: upload button clicked
     observeEvent(input$file,{
@@ -123,7 +306,7 @@ shinyServer(function(input, output, session) {
                 
                 # New.Data <- read.csv(input$file$datapath, header=TRUE, sep=",")
                 
-                New.Data <- tryCatch({read.csv(input$file$datapath, header=TRUE, sep=",")},
+                New.Data <- tryCatch({as.data.frame(read_csv(input$file$datapath))},
                                      error=function(e){"Data import error"})
                 
                 
@@ -136,7 +319,7 @@ shinyServer(function(input, output, session) {
                 
             } else {
                 
-                New.Data <- tryCatch({read.csv(input$file$datapath, header=TRUE, sep=",")},
+                New.Data <- tryCatch({as.data.frame(read_csv(input$file$datapath))},
                                      error=function(e){"Data import error"})
                 
             }
@@ -149,6 +332,7 @@ shinyServer(function(input, output, session) {
                 switching <<- TRUE
                 source("newData.R", local = TRUE)
                 source("selNewData.R", local=TRUE)
+                switching <<- FALSE
                 # V$last.switched <-as.numeric(Sys.time())
                 # Sys.sleep(2)
                 # V$switched <- TRUE
@@ -210,7 +394,7 @@ shinyServer(function(input, output, session) {
                 switching <<- TRUE
                 #Update input selections based on selected dataset
                 source("selUpdate.R", local=TRUE)
-                # switching <<- FALSE
+                switching <<- FALSE
                 # V$last.switched <- as.numeric(Sys.time())
                 
                 # Sys.sleep(2)
@@ -238,12 +422,12 @@ shinyServer(function(input, output, session) {
             if (!is.element(input$Y_dy,V$Choices[[V$Current]]$Group_dy)){
                 updateSelectInput(session, "Y_dy", label = "Y variable (continuous)")
                 
-                # sel.Trans.Log <- input$Trans.Log
+                # sel.TransLog <- input$TransLog
                 # 
                 # 
-                # updateCheckboxGroupInput(session, "Trans.Log", NULL, inline = TRUE,
-                #                          choices = choices$Trans.Log,
-                #                          selected = sel.Trans.Log)
+                # updateCheckboxGroupInput(session, "TransLog", NULL, inline = TRUE,
+                #                          choices = choices$TransLog,
+                #                          selected = sel.TransLog)
                 
             }
         } else {
@@ -263,6 +447,12 @@ shinyServer(function(input, output, session) {
                 # shinyjs::hide("div.CatOptions")
                 # shinyjs::show("div.ScatterOptions")
                 # shinyjs::show("div.Models")
+                
+                shinyjs::enable(selector = "#TransLog input[value='X']")
+                shinyjs::enable(selector = "#TransStd input[value='X']")
+                
+                
+               
                 
                 #X categorical?
             } else {
@@ -286,10 +476,35 @@ shinyServer(function(input, output, session) {
                 updateCheckboxGroupInput(session, "Fit.Power", choices = c("Show results"),
                                          selected = NULL)
                 V$Group.Fit.Power[[V$Current]] <- FALSE
+                
+                updateCheckboxGroupInput(session, "Fit.Exp", choices = c("Show results"),
+                                         selected = NULL)
+                V$Group.Fit.Exp[[V$Current]] <- FALSE
 
                 updateCheckboxGroupInput(session, "Fit.Custom", choices = c("Show results"),
                                          selected = NULL)
                 V$Group.Fit.Custom[[V$Current]] <- FALSE
+                
+                #Cannot transform categorical X var
+                sel.TransLog <- input$TransLog
+                if (is.element("X", sel.TransLog)){
+                    
+                    sel.TransLog <- sel.TransLog[-which(sel.TransLog == "X")]
+                    updateCheckboxGroupInput(session, "TransLog", NULL, inline = TRUE,
+                                             choices = choices$TransLog,
+                                             selected = sel.TransLog)
+                }
+
+                sel.TransStd <- input$TransStd
+                if (is.element("X", sel.TransStd)){
+                sel.TransStd <- sel.TransStd[-which(sel.TransStd == "X")]
+                updateCheckboxGroupInput(session, "TransStd", NULL, inline = TRUE,
+                                         choices = choices$TransStd,
+                                         selected = sel.TransStd)
+                }
+                
+                shinyjs::disable(selector = "#TransLog input[value='X']")
+                shinyjs::disable(selector = "#TransStd input[value='X']")
                 
                 
                 # shinyjs::hide("div.ScatterOptions")
@@ -470,7 +685,19 @@ shinyServer(function(input, output, session) {
             # shinyjs::hide("Line.Color.Group")
         }
         
-        #Power Model
+        #Exponential Model
+        if (any(grepl("Color by group", input$Fit.Exp))){
+            
+            shinyjs::disable("div.Color.Exp")
+            # shinyjs::show("Line.Color.Group")
+            
+        } else {
+            
+            shinyjs::enable("div.Color.Exp")
+            # shinyjs::hide("Line.Color.Group")
+        }
+        
+        #Custom Model
         if (any(grepl("Color by group", input$Fit.Custom))){
             
             shinyjs::disable("div.Color.Custom")
@@ -585,6 +812,9 @@ shinyServer(function(input, output, session) {
                    V$Choices[[i]]$Y_dy <- c("(none)", setdiff(V$Choices[[i]]$Y_dy, c("(none)", New.Var)))
                    updateSelectInput(session, "Y_dy", choices = V$Choices[[i]]$Y_dy, selected = input$Y_dy)
                    
+                   updateSelectInput(session, "Scat.Error.X_dy", choices = V$Choices[[i]]$Y_dy, selected = input$Scat.Error.X_dy)
+                   updateSelectInput(session, "Scat.Error.Y_dy", choices = V$Choices[[i]]$Y_dy, selected = input$Scat.Error.Y_dy)
+                                     
                    }
                    
                } else {  #remove cat var (NEW is shorter than OLD)
@@ -615,6 +845,9 @@ shinyServer(function(input, output, session) {
                        #add variable to list of y variables
                        V$Choices[[i]]$Y_dy <- c("(none)", sort(c(Current.Y.Vars, Rem.Var)))
                        updateSelectInput(session, "Y_dy", choices = V$Choices[[i]]$Y_dy, selected = input$Y_dy)
+                       
+                       updateSelectInput(session, "Scat.Error.X_dy", choices = V$Choices[[i]]$Y_dy, selected = input$Scat.Error.X_dy)
+                       updateSelectInput(session, "Scat.Error.Y_dy", choices = V$Choices[[i]]$Y_dy, selected = input$Scat.Error.Y_dy)
                        
                        # #remove new variable from list of x variables
                        # V$Choices[[i]]$X_dy <- c("(none)", setdiff(V$Choices[[i]]$X_dy, c("(none)", Rem.Var)))
@@ -651,6 +884,8 @@ shinyServer(function(input, output, session) {
                 
                 #Grouping variable selected
                 if (input$Group_dy != "(none)") {
+                    
+                    message(switching)
                     
                     if (!switching){
                     
@@ -743,6 +978,16 @@ shinyServer(function(input, output, session) {
                         
                     }
                     
+                    if (!V$Group.Fit.Exp[[V$Current]] & !is.element(input$X_dy,V$Choices[[V$Current]]$Group_dy)){
+                        message(input$Fit.Exp)
+                        
+                        current.fit.exp <- input$Fit.Exp
+                        updateCheckboxGroupInput(session, "Fit.Exp", choices = c("Show results", "Fit by group", "Color by group"),
+                                                 selected = current.fit.exp)
+                        V$Group.Fit.Exp[[V$Current]] <- TRUE
+
+                    }
+                    
                     if (!V$Group.Fit.Custom[[V$Current]] & !is.element(input$X_dy,V$Choices[[V$Current]]$Group_dy)){ 
                         current.fit.custom <- input$Fit.Custom
                         updateCheckboxGroupInput(session, "Fit.Custom", choices = c("Show results", "Fit by group", "Color by group"),
@@ -824,6 +1069,11 @@ shinyServer(function(input, output, session) {
                     updateCheckboxGroupInput(session, "Fit.Power", choices = c("Show results"),
                                              selected = current.fit.pow)
                     V$Group.Fit.Power[[V$Current]] <- FALSE
+                    
+                    current.fit.exp <- grep("group", input$Fit.Exp, value = TRUE, invert = TRUE)
+                    updateCheckboxGroupInput(session, "Fit.Exp", choices = c("Show results"),
+                                             selected = current.fit.exp)
+                    V$Group.Fit.Exp[[V$Current]] <- FALSE
                     
                     current.fit.custom <- grep("group", input$Fit.Custom, value = TRUE, invert = TRUE)
                     updateCheckboxGroupInput(session, "Fit.Custom", choices = c("Show results"),
@@ -1005,6 +1255,77 @@ shinyServer(function(input, output, session) {
     })
     
     
+    # #Need to observe Exp model 
+    # observe({
+    #     message(length(V$exp.form))
+    #     if(length(V$exp.form) > 0){
+    #         # form <- "\\hello"
+    #         
+    #         #rise YES
+    #         if (any(grepl("Rise", input$Exp.Options))){
+    #             
+    #             #intercept YES
+    #             if (any(grepl("Include", input$Exp.Options))){
+    #                 message("Rise Y, Int Y")
+    #                 
+    #                 form <- y ~ a - a*exp(b*x) + c
+    #                 start.params <- list(a = 1, b = 0, c= 0)
+    #                 
+    #                 #intercept NO
+    #             } else {
+    #                 message("Rise Y, Int N")
+    #                 
+    #                 form <- y ~ a - a*exp(b*x)
+    #                 start.params <- list(a = 1, b=0)
+    #                 
+    #             }
+    #             
+    #             
+    #             #rise NO
+    #         } else {
+    #             
+    #             #intercept YES
+    #             if (any(grepl("Include", input$Exp.Options))){
+    #                 
+    #                 # message("Rise N, Int Y")
+    #                 V$exp.form[[V$Current]] <- y ~ a*exp(b*x) + c
+    #                 V$exp.params[[V$Current]] <- list(a = 1, b = 0, c = 0)
+    #                 form.text <- "\\(Exponential \\space model: \\space\\space Y = a \\times e^{bX} + c\\)"
+    #                 #intercept NO
+    #             } else {
+    #                 
+    #                 message("Rise N, Int N")
+    #                 message(V$exp.form[[V$Current]])
+    #                 V$exp.form[[V$Current]] <- y ~ a*exp(b*x)
+    #                 V$exp.params[[V$Current]] <- list(a = 1, b = 0)
+    #                 form.text <- "\\(Exponential \\space model: \\space\\space Y = a \\times e^{bX}\\)"
+    #             }
+    #             
+    #         }
+    #         
+    #         
+    #         
+    #         output$exp.eq <- renderUI({
+    #             
+    #             # h5(withMathJax(form))
+    #             h5(withMathJax(form.text), style = "color: DarkBlue")
+    # h5(withMathJax("\\(Exponential \\space model: \\space\\space Y = a \\times e^{bX}\\)"), style = "color: DarkBlue")
+    #             # if (!is.null(V$lin.eq)){
+    #             #     
+    #             #     h5(withMathJax(paste("$$", V$lin.eq, "$$", sep="")))
+    #             #     
+    #             # } else {
+    #             #     
+    #             #     return()
+    #             # }
+    #             
+    #         })
+    #         
+    #     }
+    # })
+    
+    
+    
     
     # # # Display data table
     output$Data.Table <- renderDataTable({
@@ -1054,7 +1375,7 @@ shinyServer(function(input, output, session) {
             
             D <- V$Data[[i]]
             
-            D <- D[complete.cases(D[,input$X_dy], D[,input$Y_dy]),]
+            # D <- D[complete.cases(D[,input$X_dy], D[,input$Y_dy]),]
             
             #Subset data
             if (input$Subset_dy != "(none)" && !is.null(input$SubSel_dy)){
@@ -1071,11 +1392,22 @@ shinyServer(function(input, output, session) {
                 base = 10
             }
             
+            #Scatterplot errorbar values
+            if (input$Scat.Error.Y_dy != "(none)"){
+                D$ymin <- D[,input$Y_dy] - D[,input$Scat.Error.Y_dy]
+                D$ymax <- D[,input$Y_dy] + D[,input$Scat.Error.Y_dy]
+            }
             
-            # if (is.element("Y", input$Trans.Log) && min(D[,input$Y_dy], na.rm=TRUE) > 0) D[,input$Y_dy] <- log(D[,input$Y_dy], base = base)
-            if (is.element("Y", input$Trans.Log)){
+            # if (is.element("Y", input$TransLog) && min(D[,input$Y_dy], na.rm=TRUE) > 0) D[,input$Y_dy] <- log(D[,input$Y_dy], base = base)
+            if (is.element("Y", input$TransLog)){
                 
                 if (min(D[,input$Y_dy], na.rm=TRUE) > 0){
+                    
+                    #Scatterplot errorbar values
+                    if (input$Scat.Error.Y_dy != "(none)"){
+                        D$ymin <- log(D[,input$Y_dy] - D[,input$Scat.Error.Y_dy], base = base)
+                        D$ymax <- log(D[,input$Y_dy] + D[,input$Scat.Error.Y_dy], base = base)
+                    }
                     
                     D[,input$Y_dy] <- log(D[,input$Y_dy], base = base)
                     
@@ -1087,29 +1419,48 @@ shinyServer(function(input, output, session) {
                         easyClose = TRUE
                     ))
                     
-                    sel.Trans.Log <- input$Trans.Log
-                    sel.Trans.Log <- sel.Trans.Log[-which(sel.Trans.Log == "Y")]
+                    sel.TransLog <- input$TransLog
+                    sel.TransLog <- sel.TransLog[-which(sel.TransLog == "Y")]
                     
-                    updateCheckboxGroupInput(session, "Trans.Log", NULL, inline = TRUE,
-                                             choices = choices$Trans.Log,
-                                             selected = sel.Trans.Log)
+                    updateCheckboxGroupInput(session, "TransLog", NULL, inline = TRUE,
+                                             choices = choices$TransLog,
+                                             selected = sel.TransLog)
                     
                 }
                 
-            } 
+            }
             
             
-            if (is.element("Y", input$Trans.Std)) D[,input$Y_dy] <- scale(D[,input$Y_dy])
+            # if (is.element("Y", input$TransStd)) D[,input$Y_dy] <- scale(D[,input$Y_dy])
+            
+            if (is.element("Y", input$TransStd)){
+                
+                mu <- mean(D[,input$Y_dy])
+                sig <- sd(D[,input$Y_dy])
+                
+                if (input$Scat.Error.Y_dy != "(none)"){
+                    
+                    D$ymin <- (D$ymin - mu) / sig
+                    D$ymax <- (D$ymax - mu) / sig
+                    
+                }
+                
+                D[,input$Y_dy] <- scale(D[,input$Y_dy])
+                
+            }
+            
             
             
             #Define variables for easy reference (plot is made using data frame D)
             Y <- D[,input$Y_dy]
             Group <- input$Group_dy
             
+            
             #Factor grouping variable
             if (Group != "(none)"){
+
+                if (input$Drop.Cat.NA) D <- D[complete.cases(D[,Group]),] #get rid of any empty levels?  or maybe leave there to show?
                 
-                # D <- D[complete.cases(D[,Group]),] #get rid of any empty levels?  or maybe leave there to show?
                 D[,Group] <- factor(D[,Group])
             }
             
@@ -1137,14 +1488,26 @@ shinyServer(function(input, output, session) {
             #X is continuous
             if (is.numeric(D[,input$X_dy])){
                 
-                #Transformation
-                # if (is.element("X", input$Trans.Log) && min(D[,input$X_dy], na.rm=TRUE) > 0) D[,input$X_dy] <- log(D[,input$X_dy], base = base)
+                #Scatterplot errorbar values - will be overwritten if necessary
+                if (input$Scat.Error.X_dy != "(none)"){
+                    D$xmin <- D[,input$X_dy] - D[,input$Scat.Error.X_dy]
+                    D$xmax <- D[,input$X_dy] + D[,input$Scat.Error.X_dy]
+                }
                 
-                if (is.element("X", input$Trans.Log)){
+                
+                #Transformation
+                if (is.element("X", input$TransLog)){
                     
                     if (min(D[,input$X_dy], na.rm=TRUE) > 0){
                         
+                        #Scatterplot errorbar values - will be overwritten if necessary
+                        if (input$Scat.Error.X_dy != "(none)"){
+                            D$xmin <- log(D[,input$X_dy] - D[,input$Scat.Error.X_dy], base = base)
+                            D$xmax <- log(D[,input$X_dy] + D[,input$Scat.Error.X_dy], base = base)
+                        }
+                        
                         D[,input$X_dy] <- log(D[,input$X_dy], base = base)
+                        
                         
                     } else {
                         
@@ -1154,21 +1517,48 @@ shinyServer(function(input, output, session) {
                             easyClose = TRUE
                         ))
                         
-                        sel.Trans.Log <- input$Trans.Log
-                        sel.Trans.Log <- sel.Trans.Log[-which(sel.Trans.Log == "X")]
+                        sel.TransLog <- input$TransLog
+                        sel.TransLog <- sel.TransLog[-which(sel.TransLog == "X")]
                         
-                        updateCheckboxGroupInput(session, "Trans.Log", NULL, inline = TRUE,
-                                                 choices = choices$Trans.Log,
-                                                 selected = sel.Trans.Log)
+                        updateCheckboxGroupInput(session, "TransLog", NULL, inline = TRUE,
+                                                 choices = choices$TransLog,
+                                                 selected = sel.TransLog)
                         
                     }
                     
                 } 
                 
                 
-                if (is.element("X", input$Trans.Std)) D[,input$X_dy] <- scale(D[,input$X_dy])
+                if (is.element("X", input$TransStd)){
+                    
+                    mu <- mean(D[,input$X_dy])
+                    sig <- sd(D[,input$X_dy])
+                    
+                    if (input$Scat.Error.X_dy != "(none)"){
+
+                        D$xmin <- (D$xmin - mu) / sig
+                        D$xmax <- (D$xmax - mu) / sig
+                        
+                    }
+                    
+                    D[,input$X_dy] <- scale(D[,input$X_dy])
+                    
+                }
                 
                 X <- D[,input$X_dy]
+                
+                # #Scatterplot errorbar values
+                # if (input$Scat.Error.X_dy != "(none)"){
+                #     D$xmin <- D[,input$X_dy] - D[,input$Scat.Error.X_dy]
+                #     D$xmax <- D[,input$X_dy] + D[,input$Scat.Error.X_dy]
+                # }
+                
+                # #Scatterplot errorbar values
+                # if (input$Scat.Error.Y_dy != "(none)"){
+                #     D$ymin <- D[,input$Y_dy] - D[,input$Scat.Error.Y_dy]
+                #     D$ymax <- D[,input$Y_dy] + D[,input$Scat.Error.Y_dy]
+                # }
+                
                 
                 #X axis limits
                 if (input$xmin == ""){
@@ -1187,6 +1577,14 @@ shinyServer(function(input, output, session) {
                 
                 #Lines
                 if (any(grepl("Show", input$Lines_dy))){
+                    
+                    # #doesn't really seem to work
+                    # if (any(grepl("break", input$Lines_dy))){
+                    #     na.rm = TRUE
+                    #     message("do break!")
+                    # } else {
+                    #     na.rm = FALSE
+                    # }
                     
                     if (input$Line.Order == "X axis order") do_geom_line <- geom_line
                     if (input$Line.Order == "Dataset order") do_geom_line <- geom_path
@@ -1207,13 +1605,13 @@ shinyServer(function(input, output, session) {
                             if (any(grepl("group", input$Lines_dy))) { #color by group
                                 
                                 #Group lintype / group color
-                                gg_lines <- do_geom_line(aes_string(color = Group, group = Group, linetype = Group), size = input$Line.Size, alpha = 1-(input$Line.Trans/100))
+                                gg_lines <- do_geom_line(aes_string(color = bt(Group), group = bt(Group), linetype = bt(Group)), size = input$Line.Size, alpha = 1-(input$Line.Trans/100))
                                 gg_lines_lty_group <- scale_linetype_manual(values = rep(gsub(" ","",tolower(lty)),10))
                                 
                             } else {
                                 
                                 #Group lintype / single color
-                                gg_lines <- do_geom_line(aes_string(group = Group, linetype = Group), color = input$Line.Color, size = input$Line.Size, alpha = 1-(input$Line.Trans/100))
+                                gg_lines <- do_geom_line(aes_string(group = bt(Group), linetype = bt(Group)), color = input$Line.Color, size = input$Line.Size, alpha = 1-(input$Line.Trans/100))
                                 gg_lines_lty_group <- scale_linetype_manual(values = rep(gsub(" ","",tolower(lty)),10))
                                 
                             }
@@ -1224,13 +1622,13 @@ shinyServer(function(input, output, session) {
                             if (any(grepl("group", input$Lines_dy))) {
                                 
                                 #Single lintype / group color
-                                gg_lines <- do_geom_line(aes_string(color = Group, group = Group), size = input$Line.Size, linetype = gsub(" ","",tolower(input$Line.Type_dy)), alpha = 1-(input$Line.Trans/100))
+                                gg_lines <- do_geom_line(aes_string(color = bt(Group), group = bt(Group)), size = input$Line.Size, linetype = gsub(" ","",tolower(input$Line.Type_dy)), alpha = 1-(input$Line.Trans/100))
                                 gg_lines_lty_group <- NULL
                                 
                             } else {
                                 
                                 #Single lintype / single color
-                                gg_lines <- do_geom_line(aes_string(group = Group), color = input$Line.Color, size = input$Line.Size, linetype = gsub(" ","",tolower(input$Line.Type_dy)), alpha = 1-(input$Line.Trans/100))
+                                gg_lines <- do_geom_line(aes_string(group = bt(Group)), color = input$Line.Color, size = input$Line.Size, linetype = gsub(" ","",tolower(input$Line.Type_dy)), alpha = 1-(input$Line.Trans/100))
                                 gg_lines_lty_group <- NULL
                                 
                             }
@@ -1264,12 +1662,12 @@ shinyServer(function(input, output, session) {
                         # if (input$Sym.Color_dy == "Grouping Variable") {
                         if (any(grepl("group", input$Symbols_dy))){
                             
-                            gg_points <- geom_point(aes_string(color = Group, shape = Group), size = input$Sym.Size, stroke = input$Sym.Stroke, alpha = 1-(input$Sym.Trans/100))
+                            gg_points <- geom_point(aes_string(color = bt(Group), shape = bt(Group)), size = input$Sym.Size, stroke = input$Sym.Stroke, alpha = 1-(input$Sym.Trans/100))
                             # gg_points_shape_group <- scale_shape_manual(values = rep(lookup$pch,10))
                             
                         } else {
                             
-                            gg_points <- geom_point(aes_string(shape = Group), color = input$Sym.Color, size = input$Sym.Size, stroke = input$Sym.Stroke, alpha = 1-(input$Sym.Trans/100))
+                            gg_points <- geom_point(aes_string(shape = bt(Group)), color = input$Sym.Color, size = input$Sym.Size, stroke = input$Sym.Stroke, alpha = 1-(input$Sym.Trans/100))
                             # gg_points_shape_group <- scale_shape_manual(values = rep(lookup$pch,10))
                             
                         }
@@ -1279,7 +1677,7 @@ shinyServer(function(input, output, session) {
                         
                         # if (input$Sym.Color_dy == "Grouping Variable") {
                         if (any(grepl("group", input$Symbols_dy))){
-                            gg_points <- geom_point(aes_string(color = Group), size = input$Sym.Size, shape = shape, stroke = input$Sym.Stroke, alpha = 1-(input$Sym.Trans/100))
+                            gg_points <- geom_point(aes_string(color = bt(Group)), size = input$Sym.Size, shape = shape, stroke = input$Sym.Stroke, alpha = 1-(input$Sym.Trans/100))
                             gg_points_shape_group <- NULL
                             
                         } else {
@@ -1300,6 +1698,47 @@ shinyServer(function(input, output, session) {
                 } #end symbols  
                 
                 
+                #Errorbars X
+                if (input$Scat.Error.X_dy != "(none)"){
+                   
+                        if (any(grepl("group", input$Symbols_dy))){
+                            gg_Xerror <- geom_errorbarh(aes_string(xmin = "xmin", xmax = "xmax", color = bt(Group)), height = 0,
+                                                        size = input$Sym.Stroke*0.5, alpha = 1-(input$Sym.Trans/100))
+                        } else {
+                            
+                            gg_Xerror <- geom_errorbarh(aes(xmin = xmin, xmax = xmax), height = 0,
+                                                        color = input$Sym.Color, size = input$Sym.Stroke*0.5, alpha = 1-(input$Sym.Trans/100))
+                        }
+                    
+                    
+                } else {
+                    
+                    gg_Xerror <- NULL
+                    
+                } #end ErrorX  
+                
+                #Errorbars Y
+                if (input$Scat.Error.Y_dy != "(none)"){
+                    
+                    if (any(grepl("group", input$Symbols_dy))){
+                        gg_Yerror <- geom_errorbar(aes_string(ymin = "ymin", ymax = "ymax", color = bt(Group)), width = 0,
+                                                    size = input$Sym.Stroke*0.5, alpha = 1-(input$Sym.Trans/100))
+                    } else {
+                        
+                        gg_Yerror <- geom_errorbar(aes(ymin = ymin, ymax = ymax), width = 0,
+                                                    color = input$Sym.Color, size = input$Sym.Stroke*0.5, alpha = 1-(input$Sym.Trans/100))
+                    }
+                    
+                    
+                } else {
+                    
+                    gg_Yerror <- NULL
+                    
+                } #end ErrorY  
+                
+                
+                
+                
                 #Fit models
                 
                 #Linear model
@@ -1312,13 +1751,13 @@ shinyServer(function(input, output, session) {
                         
                         if (any(grepl("Color by group", input$Fit.Linear))) {
                             
-                            gg_fit_linear <- geom_smooth(aes_string(color = Group), method = 'lm', formula = y~x, se=FALSE,
+                            gg_fit_linear <- geom_smooth(aes_string(color = bt(Group)), method = 'lm', formula = y~x, se=FALSE,
                                                          linetype = gsub(" ","",tolower(input$Type.Linear)),
                                                          size = input$Size.Linear)
                             
                         } else {
                             
-                            gg_fit_linear <- geom_smooth(aes_string(group = Group), method = 'lm', formula = y~x, se=FALSE, color = input$Color.Linear,
+                            gg_fit_linear <- geom_smooth(aes_string(group = bt(Group)), method = 'lm', formula = y~x, se=FALSE, color = input$Color.Linear,
                                                          linetype = gsub(" ","",tolower(input$Type.Linear)),
                                                          size = input$Size.Linear)
                         }
@@ -1343,13 +1782,13 @@ shinyServer(function(input, output, session) {
                         
                         if (any(grepl("Color by group", input$Fit.Quadratic))) {
                         
-                            gg_fit_quadratic <- geom_smooth(aes_string(color = Group), method = 'lm', formula = y ~ poly(x, as.numeric(input$Poly.Order)), se=FALSE,
+                            gg_fit_quadratic <- geom_smooth(aes_string(color = bt(Group)), method = 'lm', formula = y ~ poly(x, as.numeric(input$Poly.Order)), se=FALSE,
                                                             linetype = gsub(" ","",tolower(input$Type.Quadratic)),
                                                             size = input$Size.Quadratic)
                             
                         } else {
                             
-                            gg_fit_quadratic <- geom_smooth(aes_string(group = Group), method = 'lm', formula = y ~ poly(x, as.numeric(input$Poly.Order)), se=FALSE, color = input$Color.Quadratic,
+                            gg_fit_quadratic <- geom_smooth(aes_string(group = bt(Group)), method = 'lm', formula = y ~ poly(x, as.numeric(input$Poly.Order)), se=FALSE, color = input$Color.Quadratic,
                                                      linetype = gsub(" ","",tolower(input$Type.Quadratic)),
                                                      size = input$Size.Quadratic)
                         }
@@ -1374,13 +1813,13 @@ shinyServer(function(input, output, session) {
                         
                         if (any(grepl("Color by group", input$Fit.Power))) {
                             
-                            gg_fit_power <- geom_smooth(aes_string(color = Group), method = 'nlsLM', formula = y~a*x^b, method.args = list(start = list(a = 1, b=1)),
+                            gg_fit_power <- geom_smooth(aes_string(color = bt(Group)), method = 'nlsLM', formula = y~a*x^b, method.args = list(start = list(a = 1, b=1)),
                                                         se=FALSE, linetype = gsub(" ","",tolower(input$Type.Power)),
                                                         size = input$Size.Power)
                             
                         } else {
                             
-                            gg_fit_power <- geom_smooth(aes_string(group = Group), method = 'nlsLM', formula = y~a*x^b, method.args = list(start = list(a = 1, b=1)),
+                            gg_fit_power <- geom_smooth(aes_string(group = bt(Group)), method = 'nlsLM', formula = y~a*x^b, method.args = list(start = list(a = 1, b=1)),
                                                         se=FALSE, color = input$Color.Power,
                                                         linetype = gsub(" ","",tolower(input$Type.Power)),
                                                         size = input$Size.Power)
@@ -1404,6 +1843,111 @@ shinyServer(function(input, output, session) {
                 
                 
                 
+                #Exponential model
+                if (any(grepl("Exponential", input$Models))) {
+                # if (any(grepl("Custom", input$Models)) && V$form[[V$Current]] != "not fitted") {
+                    
+                    #rise YES
+                    if (any(grepl("Rise", input$Exp.Options))){
+
+                        #intercept YES
+                        if (any(grepl("Include", input$Exp.Options))){
+                            message("Rise Y, Int Y")
+
+                            form <- y ~ a - a*exp(b*x) + c
+                            start.params <- list(a = 1, b = 0, c= 0)
+
+                            #intercept NO
+                        } else {
+                            message("Rise Y, Int N")
+
+                            form <- y ~ a - a*exp(b*x)
+                            start.params <- list(a = 1, b=0)
+
+                        }
+
+
+                        #rise NO
+                    } else {
+
+                        #intercept YES
+                        if (any(grepl("Include", input$Exp.Options))){
+
+                            message("Rise N, Int Y")
+                            form <- y ~ a*exp(b*x) + c
+                            start.params <- list(a = 1, b = 0, c = 0)
+
+                            #intercept NO
+                        } else {
+
+                            message("Rise N, Int N")
+                            form <- y ~ a*exp(b*x)
+                            start.params <- list(a = 1, b = 0)
+                        }
+
+                    }
+                    
+                    # message(V$Current)
+                    # message(str(V$exp.form[[V$Current]]))
+                    # V$exp.form[[V$Current]] <- form
+                    # V$exp.params[[V$Current]] <- start.params
+                    
+                    # start.params <- eval(parse(text = paste("list(", input$Exp.Start, ")"))) #make starting values list
+                    
+                    # form <- y ~ a*exp(b*x)
+                    # start.params <- list(a = 1, b = 0)
+                    
+                    # form <- V$exp.form[[V$Current]]
+                    # start.params <-V$exp.form[[V$Current]]
+
+                    if (any(grepl("group", input$Fit.Exp)) && input$Group_dy != "(none)"){
+                        
+                        # gg_fit_exp <- geom_smooth(aes_string(group = Group), method = 'nlsLM', formula = y ~ a - a*exp(b*x) + c,
+                        #                           method.args = list(start = list(a = 250, b = -.1, c  = 1)),
+                        #                           se=FALSE, color = input$Color.Exp,
+                        #                           linetype = gsub(" ","",tolower(input$Type.Exp)),
+                        #                           size = input$Size.Exp)
+                        
+                        # message(Group)
+                        
+                        # gg_fit_exp <- geom_smooth(aes_string(group = Group), method = 'nlsLM', formula = y ~ a - a*exp(b*x) + c,
+                        #                           method.args = list(start = list(a = 1, b = 0, c  = 0)),
+                        #                           se = FALSE)
+                        
+                        
+                        if (any(grepl("Color by group", input$Fit.Exp))) {
+
+                            gg_fit_exp <- geom_smooth(aes_string(color = bt(Group)), method = 'nlsLM', formula = form, method.args = list(start = start.params, control = nls.lm.control(maxiter = 200)),
+                                                        se=FALSE, linetype = gsub(" ","",tolower(input$Type.Exp)),
+                                                        size = input$Size.Exp)
+
+                        } else {
+
+                            gg_fit_exp <- geom_smooth(aes_string(group = bt(Group)), method = 'nlsLM', formula = form, method.args = list(start = start.params, control = nls.lm.control(maxiter = 200)),
+                                                        se=FALSE, color = input$Color.Exp,
+                                                        linetype = gsub(" ","",tolower(input$Type.Exp)),
+                                                        size = input$Size.Exp)
+
+                        }
+                        
+                        
+                        
+                        
+                    } else {
+                        
+                        # message("got below")
+                        
+                        gg_fit_exp <- geom_smooth(method = 'nlsLM', formula = form, method.args = list(start = start.params, control = nls.lm.control(maxiter = 200)),
+                                                    se=FALSE, color = input$Color.Exp,
+                                                    linetype = gsub(" ","",tolower(input$Type.Exp)),
+                                                    size = input$Size.Exp)
+                    }
+                    
+                } else {
+                    gg_fit_exp <- NULL
+                }
+                
+                
                 
                 #Custom model
                 if (any(grepl("Custom", input$Models)) && V$form[[V$Current]] != "not fitted") {
@@ -1422,13 +1966,13 @@ shinyServer(function(input, output, session) {
                         
                         if (any(grepl("Color by group", input$Fit.Custom))) {
                             
-                            gg_fit_custom <- geom_smooth(aes_string(color = Group), method = 'nlsLM', formula = form, method.args = list(start = params),
+                            gg_fit_custom <- geom_smooth(aes_string(color = bt(Group)), method = 'nlsLM', formula = form, method.args = list(start = params),
                                                          se=FALSE, linetype = gsub(" ","",tolower(input$Type.Custom)),
                                                          size = input$Size.Custom)
                             
                         } else {
                             
-                            gg_fit_custom <- geom_smooth(aes_string(group = Group), method = 'nlsLM', formula = form, method.args = list(start = params),
+                            gg_fit_custom <- geom_smooth(aes_string(group = bt(Group)), method = 'nlsLM', formula = form, method.args = list(start = params),
                                                          se=FALSE, color = input$Color.Custom,
                                                          linetype = gsub(" ","",tolower(input$Type.Custom)),
                                                          size = input$Size.Custom)
@@ -1459,15 +2003,18 @@ shinyServer(function(input, output, session) {
                
                 
                 # Start ggplot
-                fig <- ggplot(D, aes_string(x = input$X_dy, y = input$Y_dy)) +
+                fig <- ggplot(D, aes_string(x = bt(input$X_dy), y = bt(input$Y_dy))) +
                     
                     gg_lines +
                     gg_lines_lty_group +
+                    gg_Xerror +
+                    gg_Yerror +
                     gg_points +
                     gg_points_shape_group +
                     gg_fit_power +
                     gg_fit_linear +
                     gg_fit_quadratic +
+                    gg_fit_exp +
                     gg_fit_custom +
                     
                     # {if (is.element("Linear", input$Fit.Models)) geom_smooth(method = 'lm', formula = y ~ x, se = FALSE)} +
@@ -1490,6 +2037,10 @@ shinyServer(function(input, output, session) {
                 # # # X is categorical   
             } else {
                 
+                
+               
+                if (input$Drop.Cat.NA) D <- D[complete.cases(D[,input$X_dy]),] 
+                    
                 
                 D[,input$X_dy] <- factor(D[,input$X_dy])  #get rid of any "empty" levels
                 
@@ -1514,7 +2065,7 @@ shinyServer(function(input, output, session) {
                 
                 
                 #start ggplot object
-                fig <- ggplot(D, aes_string(x = input$X_dy, y = input$Y_dy))
+                fig <- ggplot(D, aes_string(x = bt(input$X_dy), y = bt(input$Y_dy)))
                 
                 jitter.w <- 0.3 #jitter width
                 
@@ -1592,13 +2143,13 @@ shinyServer(function(input, output, session) {
                             
                             #Fill grouped / Edge grouped
                             if (input$CatType == "Bar plot"){
-                                gg_cat <- geom_bar(aes_string(fill = Group, color = Group), width = Spacing.X, position = position_dodge(Spacing.Group), stat = "summary", fun.y = mean, size = input$Cat.Edge)
-                                gg_error <- stat_summary(geom = "errorbar", aes_string(group = Group, color = Group), position = position_dodge(Spacing.Group), fun.data = fun.error, width = input$Error.Cap/100, size = input$Cat.Edge)
+                                gg_cat <- geom_bar(aes_string(fill = bt(Group), color = bt(Group)), width = Spacing.X, position = position_dodge(Spacing.Group), stat = "summary", fun.y = mean, size = input$Cat.Edge)
+                                gg_error <- stat_summary(geom = "errorbar", aes_string(group = bt(Group), color = bt(Group)), position = position_dodge(Spacing.Group), fun.data = fun.error, width = input$Error.Cap/100, size = input$Cat.Edge)
                                 gg_points <- NULL
                             }
                             
                             if (input$CatPoints && input$CatType != "Bar plot"){
-                                gg_points <- geom_point(aes_string(color = Group), size = input$CatPoints.Size, position = position_jitterdodge(dodge.width = Spacing.Group, jitter.width = jitter.w*Spacing.X*1.5, jitter.height = 0))
+                                gg_points <- geom_point(aes_string(color = bt(Group)), size = input$CatPoints.Size, position = position_jitterdodge(dodge.width = Spacing.Group, jitter.width = jitter.w*Spacing.X*1.5, jitter.height = 0))
                                 outlier.colour <- NA
                             } else {
                                 gg_points <- NULL
@@ -1606,7 +2157,7 @@ shinyServer(function(input, output, session) {
                             }
                             
                             if (input$CatType == "Box plot"){
-                                gg_cat <- geom_boxplot(aes_string(fill = Group, color = Group), width = Spacing.X, position = position_dodge(Spacing.Group), size = input$Cat.Edge, outlier.colour = outlier.colour)
+                                gg_cat <- geom_boxplot(aes_string(fill = bt(Group), color = bt(Group)), width = Spacing.X, position = position_dodge(Spacing.Group), size = input$Cat.Edge, outlier.colour = outlier.colour)
                                 gg_error <- NULL
                                 
                                 # #Old way
@@ -1627,7 +2178,7 @@ shinyServer(function(input, output, session) {
                             }
                             
                             if (input$CatType == "Violin plot"){
-                                gg_cat <- geom_violin(aes_string(fill = Group, color = Group), width = Spacing.X, position = position_dodge(Spacing.Group), draw_quantiles = c(.5), size = input$Cat.Edge)
+                                gg_cat <- geom_violin(aes_string(fill = bt(Group), color = bt(Group)), width = Spacing.X, position = position_dodge(Spacing.Group), draw_quantiles = c(.5), size = input$Cat.Edge)
                                 gg_error <- NULL
                                 # gg_points <- NULL
                             }  
@@ -1637,14 +2188,14 @@ shinyServer(function(input, output, session) {
                             
                             #Fill grouped / Edge not grouped
                             if (input$CatType == "Bar plot"){
-                                gg_cat <- geom_bar(aes_string(fill = Group), color = input$Edge.Color, width = Spacing.X, position = position_dodge(Spacing.Group), stat = "summary", fun.y = mean, size = input$Cat.Edge)
-                                gg_error <- stat_summary(geom = "errorbar", aes_string(group = Group), color = input$Edge.Color, position = position_dodge(Spacing.Group), fun.data = fun.error, width = input$Error.Cap/100, size = input$Cat.Edge)
+                                gg_cat <- geom_bar(aes_string(fill = bt(Group)), color = input$Edge.Color, width = Spacing.X, position = position_dodge(Spacing.Group), stat = "summary", fun.y = mean, size = input$Cat.Edge)
+                                gg_error <- stat_summary(geom = "errorbar", aes_string(group = bt(Group)), color = input$Edge.Color, position = position_dodge(Spacing.Group), fun.data = fun.error, width = input$Error.Cap/100, size = input$Cat.Edge)
                                 # gg_points <- NULL
                             }
                             
                             
                             if (input$CatPoints && input$CatType != "Bar plot"){
-                                gg_points <- geom_point(aes_string(fill = Group), color = input$Edge.Color, size = input$CatPoints.Size, position = position_jitterdodge(dodge.width = Spacing.Group, jitter.width = jitter.w*Spacing.X*1.5, jitter.height = 0))
+                                gg_points <- geom_point(aes_string(fill = bt(Group)), color = input$Edge.Color, size = input$CatPoints.Size, position = position_jitterdodge(dodge.width = Spacing.Group, jitter.width = jitter.w*Spacing.X*1.5, jitter.height = 0))
                                 outlier.colour <- NA
                             } else {
                                 gg_points <- NULL
@@ -1652,7 +2203,7 @@ shinyServer(function(input, output, session) {
                             }
                             
                             if (input$CatType == "Box plot"){
-                                gg_cat <- geom_boxplot(aes_string(fill = Group), color = input$Edge.Color, width = Spacing.X, position = position_dodge(Spacing.Group), size = input$Cat.Edge, outlier.colour = outlier.colour)
+                                gg_cat <- geom_boxplot(aes_string(fill = bt(Group)), color = input$Edge.Color, width = Spacing.X, position = position_dodge(Spacing.Group), size = input$Cat.Edge, outlier.colour = outlier.colour)
                                 gg_error <- NULL
                                 
                                 # #old way of adding points to plots
@@ -1671,7 +2222,7 @@ shinyServer(function(input, output, session) {
                             }
                             
                             if (input$CatType == "Violin plot"){
-                                gg_cat <- geom_violin(aes_string(fill = Group), color = input$Edge.Color, width = Spacing.X, position = position_dodge(Spacing.Group), draw_quantiles = c(.5), size = input$Cat.Edge)
+                                gg_cat <- geom_violin(aes_string(fill = bt(Group)), color = input$Edge.Color, width = Spacing.X, position = position_dodge(Spacing.Group), draw_quantiles = c(.5), size = input$Cat.Edge)
                                 gg_error <- NULL
                                 # gg_points <- NULL
                             } 
@@ -1688,14 +2239,14 @@ shinyServer(function(input, output, session) {
                             
                             #Fill not grouped / Edge grouped
                             if (input$CatType == "Bar plot"){
-                                gg_cat <- geom_bar(aes_string(color = Group), fill = input$Fill.Color, width = Spacing.X, position = position_dodge(Spacing.Group), stat = "summary", fun.y = mean, size = input$Cat.Edge)
-                                gg_error <- stat_summary(geom = "errorbar", aes_string(group = Group, color = Group), position = position_dodge(Spacing.Group), fun.data = fun.error, width = input$Error.Cap/100, size = input$Cat.Edge)
+                                gg_cat <- geom_bar(aes_string(color = bt(Group)), fill = input$Fill.Color, width = Spacing.X, position = position_dodge(Spacing.Group), stat = "summary", fun.y = mean, size = input$Cat.Edge)
+                                gg_error <- stat_summary(geom = "errorbar", aes_string(group = bt(Group), color = bt(Group)), position = position_dodge(Spacing.Group), fun.data = fun.error, width = input$Error.Cap/100, size = input$Cat.Edge)
                                 gg_points <- NULL
                             }
                             
                             
                             if (input$CatPoints && input$CatType != "Bar plot"){
-                                gg_points <- geom_point(aes_string(color = Group), size = input$CatPoints.Size, position = position_jitterdodge(dodge.width = Spacing.Group, jitter.width = jitter.w*Spacing.X*1.5, jitter.height = 0))
+                                gg_points <- geom_point(aes_string(color = bt(Group)), size = input$CatPoints.Size, position = position_jitterdodge(dodge.width = Spacing.Group, jitter.width = jitter.w*Spacing.X*1.5, jitter.height = 0))
                                 outlier.colour <- NA
                             } else {
                                 gg_points <- NULL
@@ -1703,7 +2254,7 @@ shinyServer(function(input, output, session) {
                             }
                             
                             if (input$CatType == "Box plot"){
-                                gg_cat <- geom_boxplot(aes_string(color = Group), fill = input$Fill.Color, width = Spacing.X, position = position_dodge(Spacing.Group), size = input$Cat.Edge, outlier.colour = outlier.colour)
+                                gg_cat <- geom_boxplot(aes_string(color = bt(Group)), fill = input$Fill.Color, width = Spacing.X, position = position_dodge(Spacing.Group), size = input$Cat.Edge, outlier.colour = outlier.colour)
                                 gg_error <- NULL
                                 
                                 # if (input$CatPoints){
@@ -1720,7 +2271,7 @@ shinyServer(function(input, output, session) {
                             }
                             
                             if (input$CatType == "Violin plot"){
-                                gg_cat <- geom_violin(aes_string(color = Group), fill = input$Fill.Color, width = Spacing.X, position = position_dodge(Spacing.Group), draw_quantiles = c(.5), size = input$Cat.Edge)
+                                gg_cat <- geom_violin(aes_string(color = bt(Group)), fill = input$Fill.Color, width = Spacing.X, position = position_dodge(Spacing.Group), draw_quantiles = c(.5), size = input$Cat.Edge)
                                 gg_error <- NULL
                                 # gg_points <- NULL
                             }  
@@ -1732,7 +2283,7 @@ shinyServer(function(input, output, session) {
                             D$interaction_for_gg <- interaction(D[,input$X_dy], D[,Group], sep = " / ")
                             new.x <- "interaction_for_gg"
                             
-                            fig <- ggplot(D, aes_string(x = new.x, y = input$Y_dy))
+                            fig <- ggplot(D, aes_string(x = bt(new.x), y = bt(input$Y_dy)))
                             
                             #Fill not grouped / Edge not grouped - MAYBE NOT POSSIBLE?  NEED SOMETHING TO GROUP BY
                             if (input$CatType == "Bar plot"){
@@ -1790,12 +2341,19 @@ shinyServer(function(input, output, session) {
                     {if (any(grepl("Fill", input$Cat.Color.Boxes))) eval(parse(text = as.character(pals[which(pals[,1] == input$Cat.Color.Theme),3])))} +
                     {if (input$xlab != "") xlab(input$xlab)} +
                     {if (input$xlab == "" && is.null(input$Cat.Color.Boxes)) xlab("")} + #gets ride of x label if using interaction column
-                    {if (input$ylab != "") ylab(input$ylab)} +
+                    {if (input$ylab != "") ylab(input$ylab)}
                     coord_cartesian(expand = FALSE) #sets ylim and xlim to exactly bound contents (temporarily)
                 
-                #gets current plot xlim and ylim (exact with no padding)
-                Xlim <- ggplot_build(fig)$layout$panel_ranges[[1]]$x.range
-                Ylim <- ggplot_build(fig)$layout$panel_ranges[[1]]$y.range
+                # #gets current plot xlim and ylim (exact with no padding) - OLD ggplot
+                # Xlim <- ggplot_build(fig)$layout$panel_ranges[[1]]$x.range
+                # Ylim <- ggplot_build(fig)$layout$panel_ranges[[1]]$y.range
+                
+                #gets current plot xlim and ylim (exact with no padding) - NEW ggplot
+                Xlim <- ggplot_build(fig)$layout$panel_scales_x[[1]]$range_c$range
+                Ylim <- ggplot_build(fig)$layout$panel_scales_y[[1]]$range$range
+                
+                # print(Xlim)
+                # print(Ylim)
                 
                 #x axis padding
                 Xlim <- c(Xlim[1] - diff(Xlim)*(input$xpad/100)*.5, Xlim[2] + diff(Xlim)*(input$xpad/100)*.5)
@@ -1839,11 +2397,9 @@ shinyServer(function(input, output, session) {
                     Ylim[2] <- as.numeric(input$ymax)
                 }
                 
-                #apply axis limits
+                # apply axis limits
                 fig <- fig +
                     coord_cartesian(xlim = Xlim, ylim = Ylim, expand = FALSE)
-                
-                
                 
             }
             
@@ -1897,7 +2453,10 @@ shinyServer(function(input, output, session) {
                 # {if (input$Legend.Title != "") scale_shape_discrete(name = input$Legend.Title)} +
                 # {if (input$Legend.Title != "") scale_linetype_discrete(name = input$Legend.Title)} +
                
-                {if (input$Legend.Title != "") guides(colour = guide_legend(input$Legend.Title), size = guide_legend(input$Legend.Title), shape = guide_legend(input$Legend.Title))} +
+                {if (input$Legend.Title != "") guides(colour = guide_legend(input$Legend.Title),
+                                                      size = guide_legend(input$Legend.Title),
+                                                      shape = guide_legend(input$Legend.Title),
+                                                      fill = guide_legend(input$Legend.Title))} +
         
                 
                 {if (input$Title != "") ggtitle(input$Title)} +
@@ -1956,25 +2515,37 @@ shinyServer(function(input, output, session) {
         
         if (!is.null(V$Fig)) {
             
+            
+            
             # V$Fig
             # V$Figs[[V$Current]][[as.numeric(input$Saved.Figs_dy)]]
             V$Figs[[1]][[input$Saved.Figs_dy]]
+            
+            # ggsave("Figure.png", V$Figs[[1]][[input$Saved.Figs_dy]],
+            #        device = tolower(input$Down.Type),
+            #        width = input$Saved.Width_dy,
+            #        height = input$Saved.Height_dy,
+            #        # units = units("in"),
+            #        dpi = input$Saved.Res_dy,
+            #        scale = 1.4)
+            
+            
         }
         
     }, height = function(){
         
         
-        if (input$Saved.Height_dy == ""){
+        if (input$Saved.Height_dy == ""){  #this first option is outdated - now a numericInput
             
             return("auto")
             
-        } else if (as.numeric(input$Saved.Height_dy) < 200){
+        } else if (input$Saved.Height_dy*100 < 200){
             
             return(200)
             
         } else {
             
-            as.numeric(input$Saved.Height_dy)
+            input$Saved.Height_dy*100
         }
         
     }, width = function(){
@@ -1983,13 +2554,13 @@ shinyServer(function(input, output, session) {
             
             return("auto")
             
-        } else if (as.numeric(input$Saved.Width_dy) < 200){
+        } else if (input$Saved.Width_dy*100 < 200){
             
             return(200)
             
         } else {
             
-            as.numeric(input$Saved.Width_dy)
+            input$Saved.Width_dy*100
         }
         
     })
@@ -2004,13 +2575,17 @@ shinyServer(function(input, output, session) {
             
             V$Figs[[1]][[i]] <- V$Fig
             
-            names(V$Figs[[1]])[i] <- paste("(", i, ") ", input$Fig.Name, sep = "")
+            if (input$Fig.Name == "") {
+                names(V$Figs[[1]])[i] <- paste("Figure ", i, input$Fig.Name, sep = "")
+            } else {
+                names(V$Figs[[1]])[i] <- input$Fig.Name
+            }
             
             updateSelectInput(session,"Saved.Figs_dy", choices = names(V$Figs[[1]]), selected = names(V$Figs[[1]])[i])
             
             updateTextInput(session, "Fig.Name", value = sels$Fig.Name)
             
-            V$Figs.dim[[1]][[i]] <- c(input$Width, input$Height)
+            V$Figs.dim[[1]][[i]] <- as.numeric(c(input$Width, input$Height))/100
             
             
             # updateSelectInput(session,"Saved.Figs_dy", choices = as.character(1:i))
@@ -2018,6 +2593,109 @@ shinyServer(function(input, output, session) {
         }
         
     })
+    
+    
+    output$Down_Fig <- downloadHandler(
+
+        # aspect.ratio <- input$Width / input$Height
+
+        filename =  function() {paste("Figure.", tolower(input$Down.Type), sep = "")},
+
+        content = function(file) {
+
+            # file <- tempfile()
+            pdf(NULL) #this is required to work on the server. seems to be an issue with ggsave: https://github.com/tidyverse/ggplot2/issues/2752
+            ggsave(file, V$Figs[[1]][[input$Saved.Figs_dy]],
+                   device = tolower(input$Down.Type),
+                   width = input$Saved.Width_dy,
+                   height = input$Saved.Height_dy,
+                   units = "in",
+                   dpi = input$Saved.Res_dy,
+                   scale = 1.4)
+
+            # unlink(file)
+        },
+
+        contentType = NULL
+    )
+     
+    
+    # output$Down_Fig <- downloadHandler(
+    # 
+    #     # aspect.ratio <- input$Width / input$Height
+    # 
+    #     filename =  function() {paste("Figure.", tolower(input$Down.Type), sep = "")},
+    # 
+    #     content = function(file) {
+    # 
+    #         device <- function(..., width, height) {
+    #             grDevices::png(..., width = width, height = height,
+    #                            res = 300, units = "in")
+    #         }
+    # 
+    #         ggsave(file, V$Figs[[1]][[input$Saved.Figs_dy]], device = device,
+    #                scale = 1.4)
+    #     },
+    # 
+    #     contentType = NULL
+    # )
+    
+    
+    # output$Down_Fig <- downloadHandler(
+    #     
+    #     filename =  function() {"Figure.png"},
+    #     
+    #     content = function(file) {
+    #         png(file,
+    #             width = input$Saved.Width_dy,
+    #             height = input$Saved.Height_dy,
+    #             units = "in",
+    #             res = input$Saved.Res_dy,
+    #             pointsize = 5)
+    #         
+    #         print(V$Figs[[1]][[input$Saved.Figs_dy]] + theme(base))
+    #         dev.off()
+    #     },
+    #     
+    #     contentType = NULL
+    # )
+    
+    
+    # ### Bare bones works on server!!!
+    # output$Down_Fig <- downloadHandler(
+    # 
+    #     filename =  function() {"Figure.png"},
+    # 
+    #     content = function(file) {
+    #         png(file,
+    #             width = 8000, #input$Saved.Width_dy,
+    #             height = 5000, #input$Saved.Height_dy,
+    #             units = "px",#  "in",
+    #             res = NA) #input$Saved.Res_dy)
+    # 
+    #         print(V$Figs[[1]][[input$Saved.Figs_dy]])
+    #         
+    #         # print(V$Figs[[1]][[input$Saved.Figs_dy]] +
+    #         #           theme_base(base_size = 11))
+    #         dev.off()
+    #     },
+    # 
+    #     contentType = NULL
+    # )
+    
+    
+    # output$Down_Fig <- downloadHandler(
+    # 
+    #     filename =  function() {"Figure.png"},
+    # 
+    #     content = function(file) {
+    #         file.copy("Figure.png", file, overwrite=TRUE)
+    #     },
+    # 
+    #     contentType = NULL
+    # )
+    
+    
     
     
     observe({
@@ -2058,6 +2736,12 @@ shinyServer(function(input, output, session) {
             shinyjs::hide("div.Power")
         }    
         
+        if (any(grepl("Exponential", input$Models))){
+            shinyjs::show("div.Exp")            
+        } else {
+            shinyjs::hide("div.Exp")
+        }   
+        
         if (any(grepl("Custom", input$Models))){
             shinyjs::show("div.Custom")            
         } else {
@@ -2096,6 +2780,14 @@ shinyServer(function(input, output, session) {
             
         }
         
+        if (any(grepl("results", input$Fit.Exp)) && any(grepl("Exponential", input$Models))){
+            
+            shinyjs::show("div.Exp.Results")            
+        } else {
+            shinyjs::hide("div.Exp.Results")    
+            
+        }
+        
         if (any(grepl("results", input$Fit.Custom)) && any(grepl("Custom", input$Models))){
 
             shinyjs::show("div.Custom.Results")
@@ -2126,6 +2818,7 @@ shinyServer(function(input, output, session) {
                 
                 Data <- subset(Data, is.element(Data[,input$Subset_dy], input$SubSel_dy))
                 
+                
                 Data[,input$Subset_dy] <- factor (Data[,input$Subset_dy])
             }
             
@@ -2139,10 +2832,10 @@ shinyServer(function(input, output, session) {
                 base = 10
             }
             
-            if (is.element("Y", input$Trans.Log) && min(Y, na.rm=TRUE) > 0) Y <- log(Y, base = base)
-            if (is.element("X", input$Trans.Log) && min(X, na.rm=TRUE) > 0) X <- log(X, base = base)
-            if (is.element("Y", input$Trans.Std)) Y <- scale(Y)
-            if (is.element("X", input$Trans.Std)) X <- scale(X)
+            if (is.element("Y", input$TransLog) && min(Y, na.rm=TRUE) > 0) Y <- log(Y, base = base)
+            if (is.element("X", input$TransLog) && min(X, na.rm=TRUE) > 0) X <- log(X, base = base)
+            if (is.element("Y", input$TransStd)) Y <- scale(Y)
+            if (is.element("X", input$TransStd)) X <- scale(X)
             
             D <- data.frame(X = X, Y = Y)
             
@@ -2248,7 +2941,6 @@ shinyServer(function(input, output, session) {
             if (input$Subset_dy != "(none)" && !is.null(input$SubSel_dy)){
                 
                 Data <- subset(Data, is.element(Data[,input$Subset_dy], input$SubSel_dy))
-                
                 Data[,input$Subset_dy] <- factor (Data[,input$Subset_dy])
             }
             
@@ -2262,10 +2954,10 @@ shinyServer(function(input, output, session) {
                 base = 10
             }
             
-            if (is.element("Y", input$Trans.Log) && min(Y, na.rm=TRUE) > 0) Y <- log(Y, base = base)
-            if (is.element("X", input$Trans.Log) && min(X, na.rm=TRUE) > 0) X <- log(X, base = base)
-            if (is.element("Y", input$Trans.Std)) Y <- scale(Y)
-            if (is.element("X", input$Trans.Std)) X <- scale(X)
+            if (is.element("Y", input$TransLog) && min(Y, na.rm=TRUE) > 0) Y <- log(Y, base = base)
+            if (is.element("X", input$TransLog) && min(X, na.rm=TRUE) > 0) X <- log(X, base = base)
+            if (is.element("Y", input$TransStd)) Y <- scale(Y)
+            if (is.element("X", input$TransStd)) X <- scale(X)
             
             D <- data.frame(X = X, Y = Y)
             
@@ -2366,7 +3058,6 @@ shinyServer(function(input, output, session) {
             if (input$Subset_dy != "(none)" && !is.null(input$SubSel_dy)){
                 
                 Data <- subset(Data, is.element(Data[,input$Subset_dy], input$SubSel_dy))
-                
                 Data[,input$Subset_dy] <- factor (Data[,input$Subset_dy])
             }
             
@@ -2380,10 +3071,10 @@ shinyServer(function(input, output, session) {
                 base = 10
             }
             
-            if (is.element("Y", input$Trans.Log) && min(Y, na.rm=TRUE) > 0) Y <- log(Y, base = base)
-            if (is.element("X", input$Trans.Log) && min(X, na.rm=TRUE) > 0) X <- log(X, base = base)
-            if (is.element("Y", input$Trans.Std)) Y <- scale(Y)
-            if (is.element("X", input$Trans.Std)) X <- scale(X)
+            if (is.element("Y", input$TransLog) && min(Y, na.rm=TRUE) > 0) Y <- log(Y, base = base)
+            if (is.element("X", input$TransLog) && min(X, na.rm=TRUE) > 0) X <- log(X, base = base)
+            if (is.element("Y", input$TransStd)) Y <- scale(Y)
+            if (is.element("X", input$TransStd)) X <- scale(X)
             
             D <- data.frame(X = X, Y = Y)
             
@@ -2453,6 +3144,277 @@ shinyServer(function(input, output, session) {
     })
     
     
+    # #Exponential model output
+    # output$Exp.Table <- renderTable({
+    #     
+    #     #only if x and y are selected
+    #     if (input$X_dy != "(none)" & input$Y_dy != "(none)" & any(grepl("Exponential", input$Models)) & any(grepl("results", input$Fit.Exp))){
+    #         
+    #         Data <- V$Data[[V$Current]]
+    #         
+    #         #Subset data
+    #         if (input$Subset_dy != "(none)" && !is.null(input$SubSel_dy)){
+    #             
+    #             Data <- subset(Data, is.element(Data[,input$Subset_dy], input$SubSel_dy))
+    #             
+    #             Data[,input$Subset_dy] <- factor (Data[,input$Subset_dy])
+    #         }
+    #         
+    #         X <- Data[,input$X_dy]
+    #         Y <- Data[,input$Y_dy]
+    #         
+    #         #Transformations
+    #         if (input$Log.Base == "e"){
+    #             base = exp(1)
+    #         } else {
+    #             base = 10
+    #         }
+    #         
+    #         if (is.element("Y", input$TransLog) && min(Y, na.rm=TRUE) > 0) Y <- log(Y, base = base)
+    #         if (is.element("X", input$TransLog) && min(X, na.rm=TRUE) > 0) X <- log(X, base = base)
+    #         if (is.element("Y", input$TransStd)) Y <- scale(Y)
+    #         if (is.element("X", input$TransStd)) X <- scale(X)
+    #         
+    #         D <- data.frame(X = X, Y = Y)
+    #         
+    #         #add in grouping variable
+    #         if (any(grepl("group", input$Fit.Exp))) {
+    #             Group <- TRUE
+    #             D$Group <- Data[,input$Group_dy]
+    #             D <- D[complete.cases(D$X, D$Y, D$Group),]
+    #             D$Group <- factor(D$Group)
+    #         } else {
+    #             Group <- FALSE
+    #             D <- D[complete.cases(D$X, D$Y),]
+    #         }
+    #         
+    #         
+    #         fit <- list()
+    #         
+    #         if (!Group){
+    #             
+    #             fit[[1]] <- nlsLM(Y ~ a*exp(b*X), data = D, start = list(a = 0, b=0))
+    #             
+    #             # tab <- data.frame(NO.NAME = "Parameter values", a = signif(fit[[1]]$coefficients[1],3), b = signif(fit[[1]]$coefficients[2],3))
+    #             tab <- data.frame(NO.NAME = "Parameter values",
+    #                               a = sprintf("%5.4g", coefficients(fit[[1]])[1]),
+    #                               b = sprintf("%5.4g", coefficients(fit[[1]])[2]))
+    #             
+    #             
+    #             names(tab)[1] <- ""
+    #             
+    #             
+    #         } else {
+    #             
+    #             n <- nlevels(D$Group)
+    #             
+    #             # tab <- data.frame(Group = character(n), a = numeric(n), b = numeric(n),
+    #             #                   stringsAsFactors = FALSE)
+    #             
+    #             tab <- data.frame(Group = character(n), a = character(n), b = character(n),
+    #                               stringsAsFactors = FALSE)
+    #             
+    #             for (i in 1:n){
+    #                 
+    #                 d <- subset(D, Group == levels(D$Group)[i])
+    #                 
+    #                 fit[[i]] <- nlsLM(Y ~ a*X^b, data = d, start = list(a = 0, b=0))
+    #                 
+    #                 tab$Group[i] <- levels(D$Group)[i]
+    #                 
+    #                 tab$a[i] <- sprintf("%5.4g", coefficients(fit[[i]])[1])
+    #                 tab$b[i] <- sprintf("%5.4g", coefficients(fit[[i]])[2])
+    #                 
+    #                 # tab$a[i] <- signif(fit[[i]]$coefficients[1],5)
+    #                 # tab$b[i] <- signif(fit[[i]]$coefficients[2],5)
+    #                 
+    #             }
+    #             
+    #         }
+    #         
+    #         return(tab)
+    #         
+    #     }  else {
+    #         
+    #         return()
+    #     }
+    #     
+    #     
+    # })
+    
+    
+    #New EXP model output
+    output$Exp.Table <- renderTable({
+
+        #only if x and y are selected
+        if (input$X_dy != "(none)" & input$Y_dy != "(none)" & any(grepl("Exponential", input$Models)) & any(grepl("results", input$Fit.Exp))){
+
+            Data <- V$Data[[V$Current]]
+
+            #Subset data
+            if (input$Subset_dy != "(none)" && !is.null(input$SubSel_dy)){
+
+                Data <- subset(Data, is.element(Data[,input$Subset_dy], input$SubSel_dy))
+
+                Data[,input$Subset_dy] <- factor (Data[,input$Subset_dy])
+            }
+
+            x <- Data[,input$X_dy]
+            y <- Data[,input$Y_dy]
+
+            #Transformations
+            if (input$Log.Base == "e"){
+                base = exp(1)
+            } else {
+                base = 10
+            }
+
+            if (is.element("Y", input$TransLog) && min(y, na.rm=TRUE) > 0) y <- log(y, base = base)
+            if (is.element("X", input$TransLog) && min(x, na.rm=TRUE) > 0) x <- log(x, base = base)
+            if (is.element("Y", input$TransStd)) y <- scale(y)
+            if (is.element("X", input$TransStd)) x <- scale(x)
+
+            D <- data.frame(x = x, y = y)
+
+            #add in grouping variable
+            if (any(grepl("group", input$Fit.Exp))) {
+                Group <- TRUE
+                D$Group <- Data[,input$Group_dy]
+                D <- D[complete.cases(D$x, D$y, D$Group),]
+                D$Group <- factor(D$Group)
+            } else {
+                Group <- FALSE
+                D <- D[complete.cases(D$x, D$y),]
+            }
+
+            # form <- gsub("x", "x", tolower(V$form[[V$Current]])) #make X's lowercase (otherwise exp issues)
+            # form <- as.formula(paste("y ~",form)) # add "Y ~" to make formula
+
+            # params <- eval(parse(text = paste("list(", V$params[[V$Current]], ")"))) #make starting values list
+
+            #rise YES
+            if (any(grepl("Rise", input$Exp.Options))){
+                
+                #intercept YES
+                if (any(grepl("Include", input$Exp.Options))){
+                    message("Rise Y, Int Y")
+                    
+                    form <- y ~ a - a*exp(b*x) + c
+                    params <- list(a = 1, b = 0, c= 0)
+                    output$exp.eq <- renderUI({h5(withMathJax("\\(Exponential \\space model: \\space\\space Y = a - a \\times e^{bX} + c\\)"), style = "color: DarkBlue")})
+                    
+                    #intercept NO
+                } else {
+                    message("Rise Y, Int N")
+                    
+                    form <- y ~ a - a*exp(b*x)
+                    params <- list(a = 1, b=0)
+                    output$exp.eq <- renderUI({h5(withMathJax("\\(Exponential \\space model: \\space\\space Y = a - a \\times e^{bX}\\)"), style = "color: DarkBlue")})
+                    
+                }
+                
+                
+                #rise NO
+            } else {
+                
+                #intercept YES
+                if (any(grepl("Include", input$Exp.Options))){
+                    
+                    message("Rise N, Int Y")
+                    form <- y ~ a*exp(b*x) + c
+                    params <- list(a = 1, b = 0, c = 0)
+                    output$exp.eq <- renderUI({h5(withMathJax("\\(Exponential \\space model: \\space\\space Y = a \\times e^{bX} + c\\)"), style = "color: DarkBlue")})
+                    
+                    #intercept NO
+                } else {
+                    
+                    message("Rise N, Int N")
+                    form <- y ~ a*exp(b*x)
+                    params <- list(a = 1, b = 0)
+                    output$exp.eq <- renderUI({h5(withMathJax("\\(Exponential \\space model: \\space\\space Y = a \\times e^{bX}\\)"), style = "color: DarkBlue")})
+                }
+                
+            }
+            
+            
+            
+            
+            
+            # form <- V$exp.form[[V$Current]]
+            # params <- V$exp.params[[V$Current]]
+
+            n.params <- length(params)
+            message(n.params)
+
+            fit <- list()
+
+            if (!Group){
+
+                fit[[1]] <- nlsLM(form, data = D, start = params)
+
+                # fit[[1]] <- nls(Y ~ a*X^b, data = D, start = list(a = 1, b=1), control = list(maxiter = 50000))
+
+                # tab <- data.frame(NO.NAME = "Parameter values", a = signif(fit[[1]]$coefficients[1],3), b = signif(fit[[1]]$coefficients[2],3))
+
+                tab <- data.frame(NO.NAME = "Parameter values")
+                names(tab)[1] <- ""
+
+                message(names(params))
+
+                for (j in 1:n.params){ #stucture in place for higher order polynomials
+
+                    # tab[1, letters[j]] <- signif(fit[[1]]$coefficients[j],5)
+                    tab[1, names(params)[j]] <- sprintf("%5.4g", coefficients(fit[[1]])[j])
+
+                }
+
+
+            } else {
+
+                n <- nlevels(D$Group)
+
+                # tab <- data.frame(Group = character(n), a = numeric(n), b = numeric(n),
+                #                   stringsAsFactors = FALSE)
+
+                # tab <- data.frame(Group = character(n), a = character(n), b = character(n),
+                #                   stringsAsFactors = FALSE)
+
+                tab <- data.frame(Group = character(n), stringsAsFactors = FALSE)
+
+                for (i in 1:n){
+
+                    d <- subset(D, Group == levels(D$Group)[i])
+
+                    fit[[i]] <- nlsLM(form, data = d, start = params)
+
+                    tab$Group[i] <- levels(D$Group)[i]
+
+                    for (j in 1:n.params){ #stucture in place for higher order polynomials
+
+                        # tab[i, letters[j]] <- signif(fit[[i]]$coefficients[j],5)
+                        tab[i, names(params)[j]] <- sprintf("%5.4g", coefficients(fit[[i]])[j])
+
+                    }
+
+                    # tab$a[i] <- signif(fit[[i]]$coefficients[1],5)
+                    # tab$b[i] <- signif(fit[[i]]$coefficients[2],5)
+
+                }
+
+            }
+
+            return(tab)
+
+        }  else {
+
+            return()
+        }
+
+    })
+    
+    
+    
+    
     #Custom model output
     output$Custom.Table <- renderTable({
         
@@ -2479,10 +3441,10 @@ shinyServer(function(input, output, session) {
                 base = 10
             }
             
-            if (is.element("Y", input$Trans.Log) && min(y, na.rm=TRUE) > 0) y <- log(y, base = base)
-            if (is.element("X", input$Trans.Log) && min(x, na.rm=TRUE) > 0) x <- log(x, base = base)
-            if (is.element("Y", input$Trans.Std)) y <- scale(y)
-            if (is.element("X", input$Trans.Std)) x <- scale(x)
+            if (is.element("Y", input$TransLog) && min(y, na.rm=TRUE) > 0) y <- log(y, base = base)
+            if (is.element("X", input$TransLog) && min(x, na.rm=TRUE) > 0) x <- log(x, base = base)
+            if (is.element("Y", input$TransStd)) y <- scale(y)
+            if (is.element("X", input$TransStd)) x <- scale(x)
             
             D <- data.frame(x = x, y = y)
             
@@ -2593,8 +3555,6 @@ shinyServer(function(input, output, session) {
             Y <- Data[,input$Y_dy]
             
             
-            
-            
             #Transformations
             if (input$Log.Base == "e"){
                 base = exp(1)
@@ -2602,8 +3562,8 @@ shinyServer(function(input, output, session) {
                 base = 10
             }
             
-            if (is.element("Y", input$Trans.Log) && min(Y, na.rm=TRUE) > 0) Y <- log(Y, base = base)
-            if (is.element("Y", input$Trans.Std)) Y <- scale(Y)
+            if (is.element("Y", input$TransLog) && min(Y, na.rm=TRUE) > 0) Y <- log(Y, base = base)
+            if (is.element("Y", input$TransStd)) Y <- scale(Y)
             
             D <- data.frame(X = X, Y = Y)
             
@@ -2899,15 +3859,18 @@ shinyServer(function(input, output, session) {
         
         # print("This text is a diagnotic place-holder...")
         # "Hello"
-        # str(V$ON)
+        # str(names(isolate(input)))
         # which(V$Name == input$Use.Data)
         # str(input$file)
         #length(V$Data)
         # str(as.numeric(input$which.file))
         # print(paste(V$New.Upload, V$Current, length(V$Data), sep=" || "))
-        str(isolate(input),1)
         
-        # print(paste(input$Trans.Log))
+        # str(isolate(state))
+        names(isolate(input))
+        # str((V$ON))
+        
+        # print(paste(input$TransLog))
         # print(str(input,1))
         # str(reactiveValuesToList(input))
         # c(input$Edge.Color, input$Fill.Color)

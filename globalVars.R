@@ -65,3 +65,20 @@ name.len <- function(Group.name){
     return(Group.name)
 }
 
+
+#backticks function!! (https://code.i-harness.com/en/q/cd293b)
+bt <- function(x) {
+    if (class(x) != "character") {
+        return(x)
+    }
+    y <- sapply(x, function(s) {
+        if (!grepl("^`", s)) {
+            s <- paste("`", s, sep="", collapse="")
+        }
+        if (!grepl("`$", s)) {
+            s <- paste(s, "`", sep="", collapse="")
+        }
+    }
+    )
+    y 
+}

@@ -9,6 +9,8 @@ sels <- list(
     Subset_dy = "(none)",
     SubSel_dy = NULL,
     CatVars_dy = NULL,
+    Scat.Error.X_dy = "(none)",
+    Scat.Error.Y_dy = "(none)",
     Symbols_dy = choices$Symbols_dy[1],
     Sym.Shape_dy = shapes[1],
     Lines_dy = NULL,
@@ -17,8 +19,8 @@ sels <- list(
     Saved.Figs_dy = "(none)",
     
     # # # Dynamic objects without choices
-    Saved.Width = "",
-    Saved.Height = "",
+    Saved.Width = 8,
+    Saved.Height = 5,
     
     # # # Static objects with choices
     Scatter.Color.Theme = pals$label[1],
@@ -31,8 +33,8 @@ sels <- list(
     Legend = "Show",
     Legend.Position = "Right",
     
-    Trans.Log = NULL,
-    Trans.Std = NULL,
+    TransLog = NULL,
+    TransStd = NULL,
     Fit.Models = NULL,
     Models = NULL,
     
@@ -47,7 +49,7 @@ sels <- list(
     xpad = 40,
     ymin = "",
     ymax = "",
-    Width = "",
+    Width = "750",
     Height = "500",
     Sym.Color = "#000000",
     Sym.Size = 3,

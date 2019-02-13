@@ -6,10 +6,25 @@ source("globalVars.R")
 source("startupChoices.R")
 source("startupSelections.R")
 
-# Define UI for random distribution application 
-shinyUI(
+# #to allow for aligned checkboxes across multiple lines
+# tweaks <- 
+#     list(tags$head(tags$style(HTML("
+#                                    .multicol { 
+#                                    height: 150px;
+#                                    -webkit-column-count: 5; /* Chrome, Safari, Opera */ 
+#                                    -moz-column-count: 5;    /* Firefox */ 
+#                                    column-count: 5; 
+#                                    -moz-column-fill: auto;
+#                                    -column-fill: auto;
+#                                    } 
+#                                    ")) 
+#     ))
+
+# Define UI 
+function(request) { shinyUI(
     bootstrapPage(
         
+        # tweaks,
         useShinyjs(),
         withMathJax(),
         
@@ -18,6 +33,17 @@ shinyUI(
             ".shiny-output-error{color: white;}" #color of error messages (make white for release)
             
         )),
+        
+        tags$head(tags$link(rel="shortcut icon", href="favicon.ico")),
+        
+        #this keeps checkboxgroupinputs aligned when on multiple lines (https://stackoverflow.com/questions/29738975/how-to-align-a-group-of-checkboxgroupinput-in-r-shiny)
+        tags$head(
+            tags$style(
+                HTML(".checkbox-inline {margin-left: 0px; margin-right: 10px;}
+                      .checkbox-inline+.checkbox-inline {margin-left: 0px; margin-right: 10px;}"
+                )
+            ) 
+        ),
         
         
         theme = shinytheme("lumen"),
@@ -75,6 +101,8 @@ shinyUI(
                     tabsetPanel(id = "plot-tabs",
                                 tabPanel("Variables", 
                                          
+                                         # h5("Figure variables", style=("font-weight: bold; color: DarkBlue")),
+                                         
                                          br(),
                                          
                                          fluidRow(
@@ -117,10 +145,31 @@ shinyUI(
                                          
                                          shinyjs::hidden(div(id = "div.Show.Vars.Options",
                                                              
+                                                             hr(style = "margin: 0px 0 10px 0; border: .5px solid #00008B"),
+                                                             h5("Categorical variables", style="margin: 0px; font-weight: bold; color: DarkBlue"),
+                                                             
+                                                             
+                                                             fluidRow(
+                                                                 column(width = 7,
+                                                                        selectInput("CatVars_dy", "Interpret numeric variables as categorical (click below):", choices = NULL,
+                                                                                    selected = NULL, multiple=TRUE)
+                                                                        
+                                                                 ),
+                                                                 
+                                                                 
+                                                                 column(width = 5,
+                                                                        
+                                                                        checkboxInput("Drop.Cat.NA", "Remove blank (NA) categories", TRUE)
+                                                                 )
+                                                             ),
+                                                             
+                                                             hr(style = "margin: 0px 0 10px 0; border: .5px solid #00008B"),
+                                                             h5("Tansformations", style="margin: 0px; font-weight: bold; color: DarkBlue"),
+                                                             
                                                              fluidRow(
                                                                  column(width = 4,
-                                                                        checkboxGroupInput("Trans.Log", "Log", inline = TRUE,
-                                                                                           choices = choices$Trans.Log, selected = sels$Trans.Log)
+                                                                        checkboxGroupInput("TransLog", "Log", inline = TRUE,
+                                                                                           choices = choices$TransLog, selected = sels$TransLog)
                                                                         
                                                                  ),
                                                                  
@@ -133,14 +182,32 @@ shinyUI(
                                                                  ),
                                                                  
                                                                  column(width = 4,
-                                                                        checkboxGroupInput("Trans.Std", "Standardize", inline = TRUE,
-                                                                                           choices = choices$Trans.Std, selected = sels$Trans.Std)
+                                                                        checkboxGroupInput("TransStd", "Standardize", inline = TRUE,
+                                                                                           choices = choices$TransStd, selected = sels$TransStd)
                                                                  )
+                                                                 
                                                                  
                                                              ),
                                                              
-                                                             selectInput("CatVars_dy", "Interpret numeric variables as categorical (click below):", choices = NULL,
-                                                                         selected = NULL, multiple=TRUE)
+                                                             hr(style = "margin: 0px 0 10px 0; border: .5px solid #00008B"),
+                                                             h5("Scatterplot errorbars", style="margin: 0px; font-weight: bold; color: DarkBlue"),
+                                                             
+                                                             fluidRow(
+                                                                 column(width = 6,
+                                                                        selectInput("Scat.Error.X_dy", "X error variable",
+                                                                                    choices = choices$Scat.Error.X_dy,
+                                                                                    selected = sels$Scat.Error.X_dy)
+                                                                        
+                                                                 ),
+                                                                 
+                                                                 column(width = 6,
+                                                                        selectInput("Scat.Error.Y_dy", "Y error variable",
+                                                                                    choices = choices$Scat.Error.Y_dy,
+                                                                                    selected = sels$Scat.Error.Y_dy)
+                                                                        
+                                                                 )
+                                                             )
+                                                             
                                                              
                                                              
                                                              
@@ -230,9 +297,23 @@ shinyUI(
                                              
                                              hr(style = "margin: 0px 0 10px 0; border: .5px solid #00008B"),
                                              
-                                             checkboxGroupInput("Lines_dy", "Connecting lines:", inline = TRUE,
-                                                                choices = choices$Lines_dy,
-                                                                selected = sels$Lines_dy),
+                                             
+                                             fluidRow(
+                                                 column(width = 12,
+                                                        
+                                                        checkboxGroupInput("Lines_dy", "Connecting lines:", inline = TRUE,
+                                                                           choices = choices$Lines_dy,
+                                                                           selected = sels$Lines_dy)
+                                                        
+                                                 )#,
+                                                 # column(width = 6,
+                                                 #        
+                                                 #        checkboxGroupInput("Line.Breaks", "ljkfk",
+                                                 #                      choices = "Blank values break lines")
+                                                 # )
+                                             ),
+                                             
+                                             
                                              
                                              fluidRow(
                                                  column(width = 6,
@@ -386,8 +467,7 @@ shinyUI(
                          shinyjs::hidden(div(id = "div.AxesOptions",
                                              
                                              
-                                             
-                                             h5("Scaling", style="margin: 0px; font-weight: bold; color: DarkBlue"),
+                                             h5("Scaling", style="font-weight: bold; color: DarkBlue"),
                                              
                                              
                                              fluidRow(
@@ -528,13 +608,16 @@ shinyUI(
                              h5("Select X and Y variables", style=("font-weight: bold; color: DarkBlue"))),
                          
                          shinyjs::hidden(div(id = "div.Models",
-                                             br(),
+                                             
                                              
                                              h5("Fit model (X is continuous)", style="font-weight: bold; color: DarkBlue"),
                                              
-                                             checkboxGroupInput("Models", NULL, inline = TRUE,
-                                                                choices = choices$Models,
-                                                                selected = sels$Models),
+                                             # div(align = 'left', 
+                                             #     class = 'multicol',
+                                                 checkboxGroupInput("Models", NULL, inline = TRUE,
+                                                                    choices = choices$Models,
+                                                                    selected = sels$Models),
+                                             # ),
                                              
                                              
                                              #Linear
@@ -640,6 +723,62 @@ shinyUI(
                                              )),
                                              
                                              
+                                             #Exponential    
+                                             shinyjs::hidden(div(id = "div.Exp",
+                                                                 
+                                                                 hr(style = "margin: 0px 0 10px 0; border: .5px solid #00008B"),
+                                                                 # h5("Exponential model", style="margin: 0px; font-weight: bold; color: DarkBlue"),
+                                                                 
+                                                                 
+                                                                 fluidRow(
+                                                                     column(width = 6,
+                                                                            h5("Exponential model", style="margin: 0px; font-weight: bold; color: DarkBlue")
+                                                                     ),
+                                                                     
+                                                                     column(width = 6,
+                                                                            
+                                                                            checkboxGroupInput("Exp.Options", NULL,
+                                                                                               choices = c("Include intercept", "Rise to maximum"),
+                                                                                               selected = NULL)
+                                                                            # selectInput("Exp.Options", "Polynomial order", choices = as.character(1:5), selected = "2")
+                                                                     )
+                                                                 ),
+                                                                 
+                                                                 # fluidRow(
+                                                                 #     
+                                                                 #     column(width = 12,
+                                                                 #            
+                                                                 #            textInput("Exp.Start", "Starting values", value =  "a = 0, b = 0")
+                                                                 #            # selectInput("Exp.Options", "Polynomial order", choices = as.character(1:5), selected = "2")
+                                                                 #     )
+                                                                 # ),
+                                                                 
+                                                                 
+                                                                 fluidRow(
+                                                                     column(width = 6,
+                                                                            checkboxGroupInput("Fit.Exp", NULL,
+                                                                                               choices = c("Show results"),
+                                                                                               selected = NULL)
+                                                                            
+                                                                     ),
+                                                                     column(width = 6,
+                                                                            div(id = "div.Color.Exp", colourInput("Color.Exp", "Color", value = "black",
+                                                                                                                    palette = "limited", showColour = "background"))
+                                                                     )
+                                                                 ),
+                                                                 
+                                                                 fluidRow(
+                                                                     column(width = 6,
+                                                                            numericInput("Size.Exp", "Thickness", value = 1, min = 0.5, max = 5, step = 0.5)
+                                                                     ),
+                                                                     
+                                                                     column(width = 6,
+                                                                            selectInput("Type.Exp", "Line type", choices = lty, selected = lty[1])
+                                                                     )
+                                                                 )
+                                                                 
+                                             )),
+                                             
                                              #Custom    
                                              shinyjs::hidden(div(id = "div.Custom",
                                                                  
@@ -730,18 +869,47 @@ shinyUI(
         conditionalPanel(
             condition = "input.mainPanelTabs == 'Figure Gallery'",  #This name must match the name of the main panel tab below
             
+            br(),
             
             selectInput("Saved.Figs_dy", "Saved Figures", choices = choices$Saved.Figs_dy, selected = sels$Saved.Figs_dy),
             
+            br(),
+            
+            hr(style = "margin: 0px 0 10px 0; border: .5px solid #00008B"),
+            
+            h5("Download options", style="margin: 0px; font-weight: bold; color: DarkBlue"),
+            
+            br(),
+            
             fluidRow(
                 column(width = 6,
-                       textInput("Saved.Width_dy", "Width", value = sels$Saved.Width_dy)
+                       numericInput("Saved.Width_dy", "Width (in)", value = sels$Saved.Width_dy)
                 ),
                 
                 column(width = 6,
-                       textInput("Saved.Height_dy", "Height", value = sels$Saved.Height_dy)
+                       numericInput("Saved.Height_dy", "Height (in)", value = sels$Saved.Height_dy)
+                )
+            ),
+            
+            fluidRow(
+                column(width = 6,
+                       numericInput("Saved.Res_dy", "Resolution (dpi)", value = 300)
+                ),
+                
+                column(width = 6,
+                       selectInput("Down.Type", "File Type", choices = c("JPG", "PNG", "PDF"),
+                                   selected = "JPG")
+                )
+                
+            ),
+            
+            fluidRow(
+                column(width = 6,
+                       br(),
+                       downloadButton("Down_Fig", "Download")
                 )
             )
+          
             
             # colourInput("Pick.Color","Color", value = "black", showColour = "background", palette = "limited")
             
@@ -784,6 +952,7 @@ shinyUI(
                                                                     
                                                                     div(br(), actionButton("Save.Fig", "Add to gallery", width = 120)),
                                                                     textInput("Fig.Name", "Figure name (optional)", "", width = 300),
+                                                                    # div(br(), downloadButton("Down.Fig", "Download", width = 120)),
                                                                     # textAreaInput("Fig.Notes", "Notes / Description", "", rows = 2),
                                                                     
                                                                     cellWidths = c("140","320")#,"100%")
@@ -878,6 +1047,17 @@ shinyUI(
                                                  
                              )),
                              
+                             shinyjs::hidden(div(id = "div.Exp.Results",
+                                                 
+                                                 hr(style = "margin: 0px 0 10px 0; border: .5px solid #00008B"),
+                                                 
+                                                 uiOutput('exp.eq'),
+                                                 # h5(withMathJax("\\(Exponential \\space model: \\space\\space Y = a \\times e^{bX}\\)"), style = "color: DarkBlue"),
+                                                 
+                                                 tableOutput("Exp.Table")
+                                                 
+                             )),
+                             
                              shinyjs::hidden(div(id = "div.Custom.Results",
                                                  
                                                  hr(style = "margin: 0px 0 10px 0; border: .5px solid #00008B"),
@@ -930,41 +1110,44 @@ shinyUI(
                              br(),
                              
                              img(src='Wellesley_monogram_40h.png', align = "left"),
-                             h4("Version 2.05  (1 March 2018)"),
+                             h4("Version 2.092  (24 January 2019)"),
                              br(),
                              h5("Created by Alden Griffith (Environmental Studies), Hannah Murphy ('19), Jeremy Wilmer (Psychology)"),
                              br(),
                              h5("Please send any comments / errors to agriffit@wellesley.edu"),
                              br(),
-                             h5("New in this update (2.04 and 2.05):"),
-                             h5("- Can switch numeric variables between continuous and categorical"),
-                             h5("- Error messages will display for impossible variable transforms or faulty data files"),
-                             h5("- Can display jittered points on top of boxplots and violin plots"),
-                             h5("- Can now color model fits by group"),
-                             h5("- Quadratic model fit replaced by more general polynomial model (order 1-5)"),
-                             h5("- Fixed a issue when adding a custom legend title"),
+                             h5("New in this update:"),
+                             h5("- Can download figures as jpg, png, or pdf (2.09)"),
+                             h5("- Scatterplot error bars available in 'Variable options' (2.09)"),
+                             h5("- Spaces in variable names are now preserved!' (2.091)"),
+                             h5("- Blank/missing (NA) values in Y variable produce gaps in lines (2.092)"),
+                             h5("- Option to keep blank/missing (NA) categorical values (2.092)"),
                              br(),
                              h5("Known issues:"),
-                             h5("- Fitted model selections are not specific to datasets and will remain the same when switching datasets"),
+                             h5("- Not all settings are preserved when switching datasests. Will be (finally) addressed in next update."),
                              
                              br()
                              
                              
                              
-                    )#,
+                    )
                     
-                    # 
+
                     # tabPanel("Development",
-                    #          
+                    # 
                     #          br(),
-                    #          
+                    #          bookmarkButton("Bookmark current session",
+                    #                         style="color: #fff; background-color: #337ab7; border-color: #2e6da4; display:center-align"),
+                    #          br(),
                     #          #Diagnostic Panel
                     #          h4("Diagnotic text output:"),
                     #          verbatimTextOutput("Text")
-                    #          
+                    # 
                     # )
+                    
+                    
         ) #end of tabset panel within mainpanel
         , width = 8) #end of mainPanel
 ) 
 )
-)
+)}

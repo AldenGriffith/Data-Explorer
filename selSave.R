@@ -10,6 +10,8 @@ V$Sel[[V$Current]] <- list(
     Subset_dy = input$Subset_dy,
     SubSel_dy = input$SubSel_dy,
     CatVars_dy = input$CatVars_dy,
+    Scat.Error.X_dy = input$Scat.Error.X_dy,
+    Scat.Error.Y_dy = input$Scat.Error.Y_dy,
     Symbols_dy = input$Symbols_dy,
     Sym.Shape_dy = input$Sym.Shape_dy,
     Lines_dy = input$Lines_dy,
@@ -34,8 +36,8 @@ V$Sel[[V$Current]] <- list(
     Legend = input$Legend,
     Legend.Position = input$Legend.Position,
     
-    Trans.Log = input$Trans.Log,
-    Trans.Std = input$Trans.Std,
+    TransLog = input$TransLog,
+    TransStd = input$TransStd,
     Fit.Models = input$Fit.Models,
     Models = input$Models,  
     
